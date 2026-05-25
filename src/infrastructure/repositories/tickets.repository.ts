@@ -1,43 +1,21 @@
-// Repository pattern: camada de acesso a dados — leitura direta do banco GLPI via mysql2.
-// Todas as queries são somente leitura (SELECT). Nenhuma mutação é feita aqui.
+// Implementação concreta de ITicketsRepository usando mysql2.
+// Todas as queries são somente leitura (SELECT).
 
-import { pool } from "@/lib/db";
+import { pool } from "../database/connection";
 
 import type { RowDataPacket } from "mysql2/promise"
-import type { GlpiTicket, GlpiSatisfaction, TicketStatus, TicketPriority } from "./types"
+import type { GlpiTicket, TicketStatus, TicketPriority } from "@/src/domain/entities/ticket"
+import type { ITicketsRepository, TicketFilters, DashboardMetrics } from "@/src/domain/repositories/ITicketsRepository"
 
-// ID do técnico logado — configurado via variável de ambiente TECHNICIAN_ID
+// ---------------------------------------------------------------------------
+// Configuração
+// ---------------------------------------------------------------------------
+
 const TECHNICIAN_ID = parseInt(process.env.TECHNICIAN_ID ?? "0", 10)
-
 const ALLOWED_ENTITIES = process.env.ALLOWED_ENTITIES
 
 // ---------------------------------------------------------------------------
-// Interfaces públicas
-// ---------------------------------------------------------------------------
-
-export interface TicketFilters {
-  status?: TicketStatus[]
-  priority?: TicketPriority[]
-  categoryId?: number[]
-  search?: string
-  dateFrom?: string
-  dateTo?: string
-  slaOverdue?: boolean
-}
-
-export interface DashboardMetrics {
-  assigned: number
-  newTickets: number
-  solved: number
-  pending: number
-  avgResolutionHours: number
-  avgSatisfaction: number
-  slaOverdue: number
-  total: number
-}
-
-// ---------------------------------------------------------------------------
-// Helper: executa query parametrizada e retorna linhas tipadas
+// Helper de query
 // ---------------------------------------------------------------------------
 
 async function q<T extends RowDataPacket>(sql: string, params: unknown[] = []): Promise<T[]> {
@@ -46,7 +24,7 @@ async function q<T extends RowDataPacket>(sql: string, params: unknown[] = []): 
 }
 
 // ---------------------------------------------------------------------------
-// Mapeamentos de status GLPI (numérico → string)
+// Mapeamentos
 // ---------------------------------------------------------------------------
 
 function mapStatus(n: number): TicketStatus {
@@ -60,10 +38,6 @@ function mapStatus(n: number): TicketStatus {
   }
   return m[n] ?? "new"
 }
-
-// ---------------------------------------------------------------------------
-// Tipo da linha bruta retornada pelas queries
-// ---------------------------------------------------------------------------
 
 interface RawTicketRow extends RowDataPacket {
   id: number
@@ -135,13 +109,12 @@ function mapRow(row: RawTicketRow): GlpiTicket {
       : null,
     entity: row.entity_name ?? "—",
     takeintoaccount_delay_stat: row.takeintoaccount_delay_stat,
-    // GLPI armazena 0 quando não resolvido — tratar como null
     solve_delay_stat: row.solve_delay_stat > 0 ? row.solve_delay_stat : null,
   }
 }
 
 // ---------------------------------------------------------------------------
-// Query base: meus tickets (onde sou o técnico atribuído, type=2)
+// SQL base — meus chamados (técnico atribuído, type=2)
 // ---------------------------------------------------------------------------
 
 const MY_TICKETS_SQL = `
@@ -157,8 +130,8 @@ const MY_TICKETS_SQL = `
     tec.name      AS tec_name,
     tec.realname  AS tec_realname,
     tec.firstname AS tec_firstname,
-    cat.id          AS cat_id,
-    cat.name        AS cat_name,
+    cat.id           AS cat_id,
+    cat.name         AS cat_name,
     cat.completename AS cat_completename,
     ent.completename AS entity_name
   FROM glpi_tickets t
@@ -185,26 +158,60 @@ const MY_TICKETS_SQL = `
   ORDER BY t.date_creation DESC
 `
 
-async function fetchMyRawTickets(): Promise<GlpiTicket[]> {
+async function fetchMyTicketsRaw(): Promise<GlpiTicket[]> {
   if (!TECHNICIAN_ID) return []
   try {
     const rows = await q<RawTicketRow>(MY_TICKETS_SQL, [TECHNICIAN_ID, TECHNICIAN_ID])
     return rows.map(mapRow)
   } catch (err) {
-    console.error("[repository] fetchMyRawTickets error:", err)
+    console.error("[tickets.repository] fetchMyTicketsRaw:", err)
     return []
   }
 }
 
 // ---------------------------------------------------------------------------
-// ticketsRepository
+// Filtros em memória (dataset por técnico é pequeno)
 // ---------------------------------------------------------------------------
 
-export const ticketsRepository = {
+function applyFilters(items: GlpiTicket[], f: TicketFilters): GlpiTicket[] {
+  let r = items
+  if (f.status?.length) r = r.filter((t) => f.status!.includes(t.status))
+  if (f.priority?.length) r = r.filter((t) => f.priority!.includes(t.priority))
+  if (f.categoryId?.length) r = r.filter((t) => t.category != null && f.categoryId!.includes(t.category.id))
+  if (f.search) {
+    const term = f.search.toLowerCase()
+    r = r.filter(
+      (t) =>
+        t.name.toLowerCase().includes(term) ||
+        String(t.id).includes(term) ||
+        t.requester.name.toLowerCase().includes(term) ||
+        (t.requester.firstname ?? "").toLowerCase().includes(term),
+    )
+  }
+  if (f.dateFrom) r = r.filter((t) => new Date(t.date_creation) >= new Date(f.dateFrom!))
+  if (f.dateTo) r = r.filter((t) => new Date(t.date_creation) <= new Date(f.dateTo!))
+  if (f.slaOverdue) {
+    const now = Date.now()
+    r = r.filter(
+      (t) =>
+        t.time_to_resolve != null &&
+        new Date(t.time_to_resolve).getTime() < now &&
+        t.status !== "solved" &&
+        t.status !== "closed",
+    )
+  }
+  return r
+}
+
+// ---------------------------------------------------------------------------
+// Implementação
+// ---------------------------------------------------------------------------
+
+class TicketsRepository implements ITicketsRepository {
   async getMyTickets(filters: TicketFilters = {}): Promise<GlpiTicket[]> {
-    const all = await fetchMyRawTickets()
+    const all = await fetchMyTicketsRaw()
     return applyFilters(all, filters)
-  },
+  }
 
   async getNewTickets(filters: TicketFilters = {}): Promise<GlpiTicket[]> {
     try {
@@ -222,8 +229,8 @@ export const ticketsRepository = {
           NULL AS tec_name,
           NULL AS tec_realname,
           NULL AS tec_firstname,
-          cat.id          AS cat_id,
-          cat.name        AS cat_name,
+          cat.id           AS cat_id,
+          cat.name         AS cat_name,
           cat.completename AS cat_completename,
           ent.completename AS entity_name
         FROM glpi_tickets t
@@ -252,10 +259,10 @@ export const ticketsRepository = {
       )
       return applyFilters(rows.map(mapRow), filters)
     } catch (err) {
-      console.error("[repository] getNewTickets error:", err)
+      console.error("[tickets.repository] getNewTickets:", err)
       return []
     }
-  },
+  }
 
   async getById(id: number): Promise<GlpiTicket | null> {
     try {
@@ -273,8 +280,8 @@ export const ticketsRepository = {
           tec.name      AS tec_name,
           tec.realname  AS tec_realname,
           tec.firstname AS tec_firstname,
-          cat.id          AS cat_id,
-          cat.name        AS cat_name,
+          cat.id           AS cat_id,
+          cat.name         AS cat_name,
           cat.completename AS cat_completename,
           ent.completename AS entity_name
         FROM glpi_tickets t
@@ -303,19 +310,20 @@ export const ticketsRepository = {
       )
       return rows.length > 0 ? mapRow(rows[0]) : null
     } catch (err) {
-      console.error("[repository] getById error:", err)
+      console.error("[tickets.repository] getById:", err)
       return null
     }
-  },
+  }
 
   async getDashboardMetrics(): Promise<DashboardMetrics> {
-    const mine = await fetchMyRawTickets()
+    const mine = await fetchMyTicketsRaw()
     const solved = mine.filter((t) => t.status === "solved" || t.status === "closed")
     const pending = mine.filter((t) => t.status === "pending" || t.status === "planned")
     const now = Date.now()
+
     const slaOverdue = mine.filter(
       (t) =>
-        t.time_to_resolve &&
+        t.time_to_resolve != null &&
         new Date(t.time_to_resolve).getTime() < now &&
         t.status !== "solved" &&
         t.status !== "closed",
@@ -326,7 +334,6 @@ export const ticketsRepository = {
       Math.max(1, solved.length) /
       3600
 
-    // Média de satisfação dos tickets onde sou técnico
     let avgSatisfaction = 0
     if (TECHNICIAN_ID) {
       try {
@@ -346,11 +353,10 @@ export const ticketsRepository = {
         )
         avgSatisfaction = rows[0]?.avg_sat ?? 0
       } catch (err) {
-        console.error("[repository] getDashboardMetrics/satisfaction error:", err)
+        console.error("[tickets.repository] getDashboardMetrics/satisfaction:", err)
       }
     }
 
-    // Total de chamados novos sem técnico atribuído
     let newTickets = 0
     try {
       interface CountRow extends RowDataPacket { c: number }
@@ -369,7 +375,7 @@ export const ticketsRepository = {
       )
       newTickets = rows[0]?.c ?? 0
     } catch (err) {
-      console.error("[repository] getDashboardMetrics/newTickets error:", err)
+      console.error("[tickets.repository] getDashboardMetrics/newTickets:", err)
     }
 
     return {
@@ -382,19 +388,17 @@ export const ticketsRepository = {
       slaOverdue,
       total: mine.length,
     }
-  },
+  }
 
-  async getStatusDistribution() {
-    const mine = await fetchMyRawTickets()
+  async getStatusDistribution(): Promise<{ status: string; count: number }[]> {
+    const mine = await fetchMyTicketsRaw()
     const counts: Record<string, number> = {}
-    mine.forEach((t) => {
-      counts[t.status] = (counts[t.status] ?? 0) + 1
-    })
+    mine.forEach((t) => { counts[t.status] = (counts[t.status] ?? 0) + 1 })
     return Object.entries(counts).map(([status, count]) => ({ status, count }))
-  },
+  }
 
-  async getCategoryDistribution() {
-    const mine = await fetchMyRawTickets()
+  async getCategoryDistribution(): Promise<{ category: string; count: number }[]> {
+    const mine = await fetchMyTicketsRaw()
     const counts: Record<string, number> = {}
     mine.forEach((t) => {
       const name = t.category?.name ?? "Sem categoria"
@@ -403,10 +407,10 @@ export const ticketsRepository = {
     return Object.entries(counts)
       .map(([category, count]) => ({ category, count }))
       .sort((a, b) => b.count - a.count)
-  },
+  }
 
-  async getMonthlyEvolution() {
-    const mine = await fetchMyRawTickets()
+  async getMonthlyEvolution(): Promise<{ month: string; abertos: number; resolvidos: number; tempoMedio: number }[]> {
+    const mine = await fetchMyTicketsRaw()
     const buckets = new Map<string, { opened: number; solved: number; sumHours: number }>()
     const months: string[] = []
 
@@ -442,220 +446,7 @@ export const ticketsRepository = {
         tempoMedio: b.solved > 0 ? Number((b.sumHours / b.solved).toFixed(1)) : 0,
       }
     })
-  },
-}
-
-// ---------------------------------------------------------------------------
-// satisfactionRepository
-// ---------------------------------------------------------------------------
-
-export const satisfactionRepository = {
-  async list(): Promise<GlpiSatisfaction[]> {
-    if (!TECHNICIAN_ID) return []
-    try {
-      interface SatRow extends RowDataPacket {
-        id: number
-        tickets_id: number
-        ticket_name: string
-        satisfaction: number
-        comment: string | null
-        date_answered: Date | null
-        req_id: number | null
-        req_name: string | null
-        req_realname: string | null
-        req_firstname: string | null
-        tec_id: number | null
-        tec_name: string | null
-        tec_realname: string | null
-        tec_firstname: string | null
-        category_name: string | null
-      }
-
-      const rows = await q<SatRow>(
-        `
-        SELECT
-          s.id,
-          s.tickets_id,
-          t.name AS ticket_name,
-          s.satisfaction,
-          s.comment,
-          s.date_answered,
-          req.id        AS req_id,
-          req.name      AS req_name,
-          req.realname  AS req_realname,
-          req.firstname AS req_firstname,
-          tec.id        AS tec_id,
-          tec.name      AS tec_name,
-          tec.realname  AS tec_realname,
-          tec.firstname AS tec_firstname,
-          cat.name AS category_name
-        FROM glpi_ticketsatisfactions s
-        INNER JOIN glpi_tickets t
-          ON t.id = s.tickets_id AND t.is_deleted = 0
-        INNER JOIN glpi_tickets_users tu_tec
-          ON tu_tec.tickets_id = t.id
-          AND tu_tec.users_id = ?
-          AND tu_tec.type = 2
-        LEFT JOIN (
-          SELECT tickets_id, MIN(users_id) AS users_id
-          FROM glpi_tickets_users
-          WHERE type = 1
-          GROUP BY tickets_id
-        ) AS first_req ON first_req.tickets_id = t.id
-        LEFT JOIN glpi_users req
-          ON req.id = first_req.users_id AND req.is_deleted = 0
-        LEFT JOIN glpi_users tec
-          ON tec.id = ? AND tec.is_deleted = 0
-        LEFT JOIN glpi_itilcategories cat
-          ON cat.id = t.itilcategories_id
-        WHERE s.date_answered IS NOT NULL
-          AND s.satisfaction IS NOT NULL
-        ORDER BY s.date_answered DESC
-        `,
-        [TECHNICIAN_ID, TECHNICIAN_ID],
-      )
-
-      return rows.map(
-        (r): GlpiSatisfaction => ({
-          id: r.id,
-          ticket_id: r.tickets_id,
-          ticket_name: r.ticket_name,
-          satisfaction: r.satisfaction,
-          comment: r.comment,
-          date_answered: r.date_answered?.toISOString() ?? new Date().toISOString(),
-          user: {
-            id: r.req_id ?? 0,
-            name: r.req_name ?? "—",
-            realname: r.req_realname ?? null,
-            firstname: r.req_firstname ?? null,
-            email: null,
-          },
-          category: r.category_name ?? "—",
-          technician: {
-            id: r.tec_id ?? TECHNICIAN_ID,
-            name: r.tec_name ?? "—",
-            realname: r.tec_realname ?? null,
-            firstname: r.tec_firstname ?? null,
-            email: null,
-          },
-        }),
-      )
-    } catch (err) {
-      console.error("[repository] satisfaction.list error:", err)
-      return []
-    }
-  },
-
-  async getStats() {
-    const all = await satisfactionRepository.list()
-    const avg = all.reduce((a, s) => a + s.satisfaction, 0) / Math.max(1, all.length)
-    const positive = all.filter((s) => s.satisfaction >= 4).length
-    const negative = all.filter((s) => s.satisfaction <= 2).length
-    return {
-      total: all.length,
-      avg,
-      positivePct: (positive / Math.max(1, all.length)) * 100,
-      negativePct: (negative / Math.max(1, all.length)) * 100,
-    }
-  },
-
-  async getMonthlyTrend() {
-    const all = await satisfactionRepository.list()
-    const buckets = new Map<string, { sum: number; count: number }>()
-    const months: string[] = []
-
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date()
-      d.setMonth(d.getMonth() - i)
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-      months.push(key)
-      buckets.set(key, { sum: 0, count: 0 })
-    }
-
-    all.forEach((s) => {
-      const d = new Date(s.date_answered)
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-      const b = buckets.get(key)
-      if (b) {
-        b.sum += s.satisfaction
-        b.count++
-      }
-    })
-
-    return months.map((key) => {
-      const b = buckets.get(key)!
-      const [y, m] = key.split("-")
-      const monthName = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("pt-BR", { month: "short" })
-      return {
-        month: monthName,
-        media: b.count > 0 ? Number((b.sum / b.count).toFixed(2)) : 0,
-        avaliacoes: b.count,
-      }
-    })
-  },
-
-  async getDistribution() {
-    const all = await satisfactionRepository.list()
-    return [1, 2, 3, 4, 5].map((n) => ({
-      nota: `${n} ★`,
-      total: all.filter((s) => s.satisfaction === n).length,
-    }))
-  },
-}
-
-// ---------------------------------------------------------------------------
-// categoriesRepository
-// ---------------------------------------------------------------------------
-
-export const categoriesRepository = {
-  async list() {
-    try {
-      interface CatRow extends RowDataPacket {
-        id: number
-        name: string
-        completename: string | null
-      }
-      return await q<CatRow>(
-        "SELECT id, name, completename FROM glpi_itilcategories ORDER BY completename ASC",
-        [],
-      )
-    } catch (err) {
-      console.error("[repository] categories.list error:", err)
-      return []
-    }
-  },
-}
-
-// ---------------------------------------------------------------------------
-// Filtros aplicados em memória (dataset por técnico é pequeno)
-// ---------------------------------------------------------------------------
-
-function applyFilters(items: GlpiTicket[], f: TicketFilters): GlpiTicket[] {
-  let r = items
-  if (f.status?.length) r = r.filter((t) => f.status!.includes(t.status))
-  if (f.priority?.length) r = r.filter((t) => f.priority!.includes(t.priority))
-  if (f.categoryId?.length) r = r.filter((t) => t.category && f.categoryId!.includes(t.category.id))
-  if (f.search) {
-    const q = f.search.toLowerCase()
-    r = r.filter(
-      (t) =>
-        t.name.toLowerCase().includes(q) ||
-        String(t.id).includes(q) ||
-        t.requester.name.toLowerCase().includes(q) ||
-        (t.requester.firstname ?? "").toLowerCase().includes(q),
-    )
   }
-  if (f.dateFrom) r = r.filter((t) => new Date(t.date_creation) >= new Date(f.dateFrom!))
-  if (f.dateTo) r = r.filter((t) => new Date(t.date_creation) <= new Date(f.dateTo!))
-  if (f.slaOverdue) {
-    const now = Date.now()
-    r = r.filter(
-      (t) =>
-        t.time_to_resolve &&
-        new Date(t.time_to_resolve).getTime() < now &&
-        t.status !== "solved" &&
-        t.status !== "closed",
-    )
-  }
-  return r
 }
+
+export const ticketsRepository: ITicketsRepository = new TicketsRepository()

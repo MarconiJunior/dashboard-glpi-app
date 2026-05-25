@@ -1,17 +1,20 @@
 "use client"
 
-import { Bell, Moon, Sun, Search } from "lucide-react"
+import { Moon, Sun, Search } from "lucide-react"
 import { useTheme } from "next-themes"
+import useSWR from "swr"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { CURRENT_TECHNICIAN } from "@/lib/glpi/mock-data"
 import { getInitials } from "@/lib/glpi/utils"
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export function AppNavbar() {
   const { theme, setTheme } = useTheme()
-  const fullName = `${CURRENT_TECHNICIAN.firstname ?? ""} ${CURRENT_TECHNICIAN.realname ?? ""}`.trim()
+  const { data } = useSWR<{ fullName: string }>("/api/me", fetcher, { revalidateOnFocus: false })
+  const fullName = data?.fullName ?? "Técnico"
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-6 backdrop-blur-md">
@@ -35,10 +38,6 @@ export function AppNavbar() {
         >
           <Sun className="h-4 w-4 dark:hidden" />
           <Moon className="hidden h-4 w-4 dark:block" />
-        </Button>
-        <Button variant="ghost" size="icon" aria-label="Notificações" className="relative">
-          <Bell className="h-4 w-4" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
         </Button>
         <div className="flex items-center gap-2 border-l border-border pl-3">
           <Avatar className="h-8 w-8">

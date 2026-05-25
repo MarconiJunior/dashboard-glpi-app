@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Inbox, Sparkles, Star, Settings, ChevronLeft, Headphones } from "lucide-react"
+import { LayoutDashboard, Inbox, Sparkles, Star, ChevronLeft, Headphones } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -63,16 +63,6 @@ export function AppSidebar() {
         </nav>
 
         <div className="border-t border-sidebar-border p-2">
-          <Link
-            href="/configuracoes"
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-              collapsed && "justify-center px-0",
-            )}
-          >
-            <Settings className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Configurações</span>}
-          </Link>
           <Button
             variant="ghost"
             size="sm"

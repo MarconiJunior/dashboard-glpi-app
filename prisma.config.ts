@@ -4,7 +4,7 @@ import "dotenv/config";
 
 import { defineConfig, env } from "prisma/config";
 
-const databaseUrl = `mysql://${env("DB_USER")}:password=${env("DB_PASSWORD")}@${env("DB_HOST")}/${env("DB_NAME")}`
+const databaseUrl = `mysql://${encodeURIComponent(env("DB_USER"))}:${encodeURIComponent(env("DB_PASSWORD"))}@${env("DB_HOST")}/${env("DB_NAME")}`
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
