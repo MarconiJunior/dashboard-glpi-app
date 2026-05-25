@@ -1,15 +1,20 @@
 "use client"
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
-import type { GlpiTicket } from "@/lib/glpi/types"
-import { StatusBadge, PriorityBadge } from "./badges"
-import { formatDate, formatRelative, getRequesterName, isSlaOverdue } from "@/lib/glpi/utils"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { getInitials } from "@/lib/glpi/utils"
-import { Separator } from "@/components/ui/separator"
-import { Calendar, Clock, AlertTriangle, Tag, User, Building2, Hash } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { AlertTriangle, Building2, Calendar, Clock, Hash, Tag, User } from "lucide-react";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import {
+    Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
+} from "@/components/ui/sheet";
+import {
+    formatDate, formatRelative, getInitials, getRequesterName, isSlaOverdue
+} from "@/lib/glpi/utils";
+import { cn } from "@/lib/utils";
+
+import { PriorityBadge, StatusBadge } from "./badges";
+
+import type { GlpiTicket } from "@/lib/glpi/types"
 interface Props {
   ticket: GlpiTicket | null
   open: boolean
@@ -75,9 +80,10 @@ export function TicketDetailSheet({ ticket, open, onOpenChange }: Props) {
               <Separator />
 
               <Section title="Descrição">
-                <p className="whitespace-pre-line rounded-md border border-border/60 bg-muted/30 p-3 text-sm leading-relaxed text-muted-foreground">
-                  {ticket.content}
-                </p>
+                 <div
+                    className="whitespace-pre-line rounded-md border border-border/60 bg-muted/30 p-3 text-sm leading-relaxed text-muted-foreground"
+                    dangerouslySetInnerHTML={{ __html: decodeHtml(ticket.content) }}
+                  />
               </Section>
             </div>
           </>
@@ -85,6 +91,12 @@ export function TicketDetailSheet({ ticket, open, onOpenChange }: Props) {
       </SheetContent>
     </Sheet>
   )
+}
+
+function decodeHtml(html: string) {
+  const txt = document.createElement("textarea")
+  txt.innerHTML = html
+  return txt.value
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
