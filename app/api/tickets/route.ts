@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server"
 import { getMyTickets, getNewTickets } from "@/src/application/use-cases/tickets.use-case"
+import { getServerSession } from "@/src/infrastructure/auth/session"
 import type { TicketFilters } from "@/src/domain/repositories/ITicketsRepository"
 import type { TicketPriority, TicketStatus } from "@/src/domain/entities/ticket"
 
 export async function GET(req: Request) {
+  const session = await getServerSession()
+  if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const ctx = { technicianId: session.user.id, allowedEntities: session.user.entities }
   const { searchParams } = new URL(req.url)
   const scope = searchParams.get("scope") ?? "mine"
 
@@ -18,8 +23,8 @@ export async function GET(req: Request) {
   }
 
   const tickets = scope === "new"
-    ? await getNewTickets(filters)
-    : await getMyTickets(filters)
+    ? await getNewTickets(ctx, filters)
+    : await getMyTickets(ctx, filters)
 
   return NextResponse.json({ tickets })
 }

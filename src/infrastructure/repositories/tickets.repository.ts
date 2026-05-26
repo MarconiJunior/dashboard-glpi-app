@@ -1,16 +1,24 @@
-import { pool } from "../database/connection";
+// Implementação concreta de ITicketsRepository usando mysql2.
+// Todas as queries são somente leitura (SELECT).
 
+import { pool } from "../database/connection"
 import type { RowDataPacket } from "mysql2/promise"
 import type { GlpiTicket, TicketStatus, TicketPriority } from "@/src/domain/entities/ticket"
 import type { ITicketsRepository, TicketFilters, DashboardMetrics } from "@/src/domain/repositories/ITicketsRepository"
+import type { UserContext } from "@/src/domain/repositories/UserContext"
 
-const TECHNICIAN_ID = parseInt(process.env.TECHNICIAN_ID ?? "0", 10)
-const ALLOWED_ENTITIES = process.env.ALLOWED_ENTITIES
+// ---------------------------------------------------------------------------
+// Helper de query
+// ---------------------------------------------------------------------------
 
 async function q<T extends RowDataPacket>(sql: string, params: unknown[] = []): Promise<T[]> {
   const [rows] = await pool.query<T[]>(sql, params)
   return rows
 }
+
+// ---------------------------------------------------------------------------
+// Mapeamentos
+// ---------------------------------------------------------------------------
 
 function mapStatus(n: number): TicketStatus {
   const m: Record<number, TicketStatus> = {
@@ -98,57 +106,9 @@ function mapRow(row: RawTicketRow): GlpiTicket {
   }
 }
 
-const MY_TICKETS_SQL = `
-  SELECT
-    t.id, t.name, t.content, t.status, t.priority, t.urgency, t.impact, t.type,
-    t.date_creation, t.date_mod, t.solvedate, t.closedate, t.time_to_resolve,
-    t.takeintoaccount_delay_stat, t.solve_delay_stat,
-    req.id        AS req_id,
-    req.name      AS req_name,
-    req.realname  AS req_realname,
-    req.firstname AS req_firstname,
-    tec.id        AS tec_id,
-    tec.name      AS tec_name,
-    tec.realname  AS tec_realname,
-    tec.firstname AS tec_firstname,
-    cat.id           AS cat_id,
-    cat.name         AS cat_name,
-    cat.completename AS cat_completename,
-    ent.completename AS entity_name
-  FROM glpi_tickets t
-  INNER JOIN glpi_tickets_users tu_mine
-    ON tu_mine.tickets_id = t.id
-    AND tu_mine.users_id = ?
-    AND tu_mine.type = 2
-  LEFT JOIN (
-    SELECT tickets_id, MIN(users_id) AS users_id
-    FROM glpi_tickets_users
-    WHERE type = 1
-    GROUP BY tickets_id
-  ) AS first_req ON first_req.tickets_id = t.id
-  LEFT JOIN glpi_users req
-    ON req.id = first_req.users_id AND req.is_deleted = 0
-  LEFT JOIN glpi_users tec
-    ON tec.id = ? AND tec.is_deleted = 0
-  LEFT JOIN glpi_itilcategories cat
-    ON cat.id = t.itilcategories_id
-  LEFT JOIN glpi_entities ent
-    ON ent.id = t.entities_id
-  WHERE t.is_deleted = 0
-    AND t.entities_id IN (${ALLOWED_ENTITIES})
-  ORDER BY t.date_creation DESC
-`
-
-async function fetchMyTicketsRaw(): Promise<GlpiTicket[]> {
-  if (!TECHNICIAN_ID) return []
-  try {
-    const rows = await q<RawTicketRow>(MY_TICKETS_SQL, [TECHNICIAN_ID, TECHNICIAN_ID])
-    return rows.map(mapRow)
-  } catch (err) {
-    console.error("[tickets.repository] fetchMyTicketsRaw:", err)
-    return []
-  }
-}
+// ---------------------------------------------------------------------------
+// Filtros em memória
+// ---------------------------------------------------------------------------
 
 function applyFilters(items: GlpiTicket[], f: TicketFilters): GlpiTicket[] {
   let r = items
@@ -180,13 +140,74 @@ function applyFilters(items: GlpiTicket[], f: TicketFilters): GlpiTicket[] {
   return r
 }
 
+// ---------------------------------------------------------------------------
+// Fetch base: meus chamados (técnico atribuído, type=2)
+// ---------------------------------------------------------------------------
+
+async function fetchMyTicketsRaw(ctx: UserContext): Promise<GlpiTicket[]> {
+  if (!ctx.technicianId) return []
+  const entities = ctx.allowedEntities.join(",") || "0"
+  try {
+    const rows = await q<RawTicketRow>(
+      `
+      SELECT
+        t.id, t.name, t.content, t.status, t.priority, t.urgency, t.impact, t.type,
+        t.date_creation, t.date_mod, t.solvedate, t.closedate, t.time_to_resolve,
+        t.takeintoaccount_delay_stat, t.solve_delay_stat,
+        req.id        AS req_id,
+        req.name      AS req_name,
+        req.realname  AS req_realname,
+        req.firstname AS req_firstname,
+        tec.id        AS tec_id,
+        tec.name      AS tec_name,
+        tec.realname  AS tec_realname,
+        tec.firstname AS tec_firstname,
+        cat.id           AS cat_id,
+        cat.name         AS cat_name,
+        cat.completename AS cat_completename,
+        ent.completename AS entity_name
+      FROM glpi_tickets t
+      INNER JOIN glpi_tickets_users tu_mine
+        ON tu_mine.tickets_id = t.id
+        AND tu_mine.users_id = ?
+        AND tu_mine.type = 2
+      LEFT JOIN (
+        SELECT tickets_id, MIN(users_id) AS users_id
+        FROM glpi_tickets_users WHERE type = 1
+        GROUP BY tickets_id
+      ) AS first_req ON first_req.tickets_id = t.id
+      LEFT JOIN glpi_users req
+        ON req.id = first_req.users_id AND req.is_deleted = 0
+      LEFT JOIN glpi_users tec
+        ON tec.id = ? AND tec.is_deleted = 0
+      LEFT JOIN glpi_itilcategories cat
+        ON cat.id = t.itilcategories_id
+      LEFT JOIN glpi_entities ent
+        ON ent.id = t.entities_id
+      WHERE t.is_deleted = 0
+        AND t.entities_id IN (${entities})
+      ORDER BY t.date_creation DESC
+      `,
+      [ctx.technicianId, ctx.technicianId],
+    )
+    return rows.map(mapRow)
+  } catch (err) {
+    console.error("[tickets.repository] fetchMyTicketsRaw:", err)
+    return []
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Implementação
+// ---------------------------------------------------------------------------
+
 class TicketsRepository implements ITicketsRepository {
-  async getMyTickets(filters: TicketFilters = {}): Promise<GlpiTicket[]> {
-    const all = await fetchMyTicketsRaw()
-    return applyFilters(all, filters)
+  async getMyTickets(ctx: UserContext, filters: TicketFilters = {}): Promise<GlpiTicket[]> {
+    return applyFilters(await fetchMyTicketsRaw(ctx), filters)
   }
 
-  async getNewTickets(filters: TicketFilters = {}): Promise<GlpiTicket[]> {
+  async getNewTickets(ctx: UserContext, filters: TicketFilters = {}): Promise<GlpiTicket[]> {
+    const entities = ctx.allowedEntities.join(",") || "0"
     try {
       const rows = await q<RawTicketRow>(
         `
@@ -198,10 +219,7 @@ class TicketsRepository implements ITicketsRepository {
           req.name      AS req_name,
           req.realname  AS req_realname,
           req.firstname AS req_firstname,
-          NULL AS tec_id,
-          NULL AS tec_name,
-          NULL AS tec_realname,
-          NULL AS tec_firstname,
+          NULL AS tec_id, NULL AS tec_name, NULL AS tec_realname, NULL AS tec_firstname,
           cat.id           AS cat_id,
           cat.name         AS cat_name,
           cat.completename AS cat_completename,
@@ -211,8 +229,7 @@ class TicketsRepository implements ITicketsRepository {
           ON tu_tec.tickets_id = t.id AND tu_tec.type = 2
         LEFT JOIN (
           SELECT tickets_id, MIN(users_id) AS users_id
-          FROM glpi_tickets_users
-          WHERE type = 1
+          FROM glpi_tickets_users WHERE type = 1
           GROUP BY tickets_id
         ) AS first_req ON first_req.tickets_id = t.id
         LEFT JOIN glpi_users req
@@ -223,7 +240,7 @@ class TicketsRepository implements ITicketsRepository {
           ON ent.id = t.entities_id
         WHERE t.is_deleted = 0
           AND t.status = 1
-          AND t.entities_id IN (${ALLOWED_ENTITIES})
+          AND t.entities_id IN (${entities})
           AND tu_tec.id IS NULL
         ORDER BY t.priority DESC, t.date_creation ASC
         LIMIT 500
@@ -245,14 +262,10 @@ class TicketsRepository implements ITicketsRepository {
           t.id, t.name, t.content, t.status, t.priority, t.urgency, t.impact, t.type,
           t.date_creation, t.date_mod, t.solvedate, t.closedate, t.time_to_resolve,
           t.takeintoaccount_delay_stat, t.solve_delay_stat,
-          req.id        AS req_id,
-          req.name      AS req_name,
-          req.realname  AS req_realname,
-          req.firstname AS req_firstname,
-          tec.id        AS tec_id,
-          tec.name      AS tec_name,
-          tec.realname  AS tec_realname,
-          tec.firstname AS tec_firstname,
+          req.id        AS req_id, req.name AS req_name,
+          req.realname  AS req_realname, req.firstname AS req_firstname,
+          tec.id        AS tec_id, tec.name AS tec_name,
+          tec.realname  AS tec_realname, tec.firstname AS tec_firstname,
           cat.id           AS cat_id,
           cat.name         AS cat_name,
           cat.completename AS cat_completename,
@@ -260,22 +273,18 @@ class TicketsRepository implements ITicketsRepository {
         FROM glpi_tickets t
         LEFT JOIN (
           SELECT tickets_id, MIN(users_id) AS users_id
-          FROM glpi_tickets_users WHERE type = 1
-          GROUP BY tickets_id
+          FROM glpi_tickets_users WHERE type = 1 GROUP BY tickets_id
         ) AS first_req ON first_req.tickets_id = t.id
         LEFT JOIN (
           SELECT tickets_id, MIN(users_id) AS users_id
-          FROM glpi_tickets_users WHERE type = 2
-          GROUP BY tickets_id
+          FROM glpi_tickets_users WHERE type = 2 GROUP BY tickets_id
         ) AS first_tec ON first_tec.tickets_id = t.id
         LEFT JOIN glpi_users req
           ON req.id = first_req.users_id AND req.is_deleted = 0
         LEFT JOIN glpi_users tec
           ON tec.id = first_tec.users_id AND tec.is_deleted = 0
-        LEFT JOIN glpi_itilcategories cat
-          ON cat.id = t.itilcategories_id
-        LEFT JOIN glpi_entities ent
-          ON ent.id = t.entities_id
+        LEFT JOIN glpi_itilcategories cat ON cat.id = t.itilcategories_id
+        LEFT JOIN glpi_entities ent ON ent.id = t.entities_id
         WHERE t.id = ? AND t.is_deleted = 0
         LIMIT 1
         `,
@@ -288,8 +297,9 @@ class TicketsRepository implements ITicketsRepository {
     }
   }
 
-  async getDashboardMetrics(): Promise<DashboardMetrics> {
-    const mine = await fetchMyTicketsRaw()
+  async getDashboardMetrics(ctx: UserContext): Promise<DashboardMetrics> {
+    const mine = await fetchMyTicketsRaw(ctx)
+    const entities = ctx.allowedEntities.join(",") || "0"
     const solved = mine.filter((t) => t.status === "solved" || t.status === "closed")
     const pending = mine.filter((t) => t.status === "pending" || t.status === "planned")
     const now = Date.now()
@@ -308,42 +318,33 @@ class TicketsRepository implements ITicketsRepository {
       3600
 
     let avgSatisfaction = 0
-    if (TECHNICIAN_ID) {
-      try {
-        interface SatAvg extends RowDataPacket { avg_sat: number | null }
-        const rows = await q<SatAvg>(
-          `
-          SELECT AVG(s.satisfaction) AS avg_sat
-          FROM glpi_ticketsatisfactions s
-          INNER JOIN glpi_tickets_users tu
-            ON tu.tickets_id = s.tickets_id
-            AND tu.users_id = ?
-            AND tu.type = 2
-          WHERE s.satisfaction IS NOT NULL
-            AND s.date_answered IS NOT NULL
-          `,
-          [TECHNICIAN_ID],
-        )
-        avgSatisfaction = rows[0]?.avg_sat ?? 0
-      } catch (err) {
-        console.error("[tickets.repository] getDashboardMetrics/satisfaction:", err)
-      }
+    try {
+      interface SatAvg extends RowDataPacket { avg_sat: number | null }
+      const rows = await q<SatAvg>(
+        `SELECT AVG(s.satisfaction) AS avg_sat
+         FROM glpi_ticketsatisfactions s
+         INNER JOIN glpi_tickets_users tu
+           ON tu.tickets_id = s.tickets_id AND tu.users_id = ? AND tu.type = 2
+         WHERE s.satisfaction IS NOT NULL AND s.date_answered IS NOT NULL`,
+        [ctx.technicianId],
+      )
+      avgSatisfaction = rows[0]?.avg_sat ?? 0
+    } catch (err) {
+      console.error("[tickets.repository] getDashboardMetrics/satisfaction:", err)
     }
 
     let newTickets = 0
     try {
       interface CountRow extends RowDataPacket { c: number }
       const rows = await q<CountRow>(
-        `
-        SELECT COUNT(DISTINCT t.id) AS c
-        FROM glpi_tickets t
-        LEFT JOIN glpi_tickets_users tu_tec
-          ON tu_tec.tickets_id = t.id AND tu_tec.type = 2
-        WHERE t.is_deleted = 0
-          AND t.status = 1
-          AND t.entities_id IN (${ALLOWED_ENTITIES})
-          AND tu_tec.id IS NULL
-        `,
+        `SELECT COUNT(DISTINCT t.id) AS c
+         FROM glpi_tickets t
+         LEFT JOIN glpi_tickets_users tu_tec
+           ON tu_tec.tickets_id = t.id AND tu_tec.type = 2
+         WHERE t.is_deleted = 0
+           AND t.status = 1
+           AND t.entities_id IN (${entities})
+           AND tu_tec.id IS NULL`,
         [],
       )
       newTickets = rows[0]?.c ?? 0
@@ -363,15 +364,15 @@ class TicketsRepository implements ITicketsRepository {
     }
   }
 
-  async getStatusDistribution(): Promise<{ status: string; count: number }[]> {
-    const mine = await fetchMyTicketsRaw()
+  async getStatusDistribution(ctx: UserContext): Promise<{ status: string; count: number }[]> {
+    const mine = await fetchMyTicketsRaw(ctx)
     const counts: Record<string, number> = {}
     mine.forEach((t) => { counts[t.status] = (counts[t.status] ?? 0) + 1 })
     return Object.entries(counts).map(([status, count]) => ({ status, count }))
   }
 
-  async getCategoryDistribution(): Promise<{ category: string; count: number }[]> {
-    const mine = await fetchMyTicketsRaw()
+  async getCategoryDistribution(ctx: UserContext): Promise<{ category: string; count: number }[]> {
+    const mine = await fetchMyTicketsRaw(ctx)
     const counts: Record<string, number> = {}
     mine.forEach((t) => {
       const name = t.category?.name ?? "Sem categoria"
@@ -382,8 +383,8 @@ class TicketsRepository implements ITicketsRepository {
       .sort((a, b) => b.count - a.count)
   }
 
-  async getMonthlyEvolution(): Promise<{ month: string; abertos: number; resolvidos: number; tempoMedio: number }[]> {
-    const mine = await fetchMyTicketsRaw()
+  async getMonthlyEvolution(ctx: UserContext): Promise<{ month: string; abertos: number; resolvidos: number; tempoMedio: number }[]> {
+    const mine = await fetchMyTicketsRaw(ctx)
     const buckets = new Map<string, { opened: number; solved: number; sumHours: number }>()
     const months: string[] = []
 
@@ -401,10 +402,7 @@ class TicketsRepository implements ITicketsRepository {
       const b = buckets.get(key)
       if (b) {
         b.opened++
-        if (t.solve_delay_stat) {
-          b.sumHours += t.solve_delay_stat / 3600
-          b.solved++
-        }
+        if (t.solve_delay_stat) { b.sumHours += t.solve_delay_stat / 3600; b.solved++ }
       }
     })
 

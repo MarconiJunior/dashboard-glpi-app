@@ -1,30 +1,31 @@
 "use client"
 
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import useSWR from "swr";
-
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { getInitials } from "@/src/presentation/utils/ticket";
+import { Moon, Sun, LogOut } from "lucide-react"
+import { useTheme } from "next-themes"
+import { useRouter } from "next/navigation"
+import useSWR from "swr"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { getInitials } from "@/src/presentation/utils/ticket"
+import type { SessionUser } from "@/src/infrastructure/auth/session"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export function AppNavbar() {
   const { theme, setTheme } = useTheme()
-  const { data } = useSWR<{ fullName: string }>("/api/me", fetcher, { revalidateOnFocus: false })
+  const router = useRouter()
+  const { data } = useSWR<SessionUser>("/api/me", fetcher, { revalidateOnFocus: false })
   const fullName = data?.fullName ?? "Técnico"
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" })
+    router.push("/login")
+    router.refresh()
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-6 backdrop-blur-md">
-      {/* <div className="relative max-w-md flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar chamados, usuários, categorias..."
-          className="h-9 border-border/60 bg-muted/40 pl-9 text-sm focus-visible:bg-background"
-        />
-      </div> */}
       <div className="ml-auto flex items-center gap-2">
         <Badge variant="outline" className="hidden gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 md:flex">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
@@ -47,9 +48,18 @@ export function AppNavbar() {
           </Avatar>
           <div className="hidden flex-col leading-tight md:flex">
             <span className="text-xs font-semibold">{fullName}</span>
-            <span className="text-[10px] text-muted-foreground">Técnico de Suporte</span>
+            <span className="text-[10px] text-muted-foreground">{data?.email ?? ""}</span>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          aria-label="Sair"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="h-4 w-4" />
+        </Button>
       </div>
     </header>
   )

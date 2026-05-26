@@ -1,14 +1,12 @@
-// Caso de uso: dados do dashboard.
-// Orquestra chamadas ao repositório e retorna um único objeto pronto para serializar.
-
 import { ticketsRepository } from "@/src/infrastructure/repositories/tickets.repository"
+import type { UserContext } from "@/src/domain/repositories/UserContext"
 
-export async function getDashboardData() {
+export async function getDashboardData(ctx: UserContext) {
   const [metrics, statusDist, categoryDist, monthly] = await Promise.all([
-    ticketsRepository.getDashboardMetrics(),
-    ticketsRepository.getStatusDistribution(),
-    ticketsRepository.getCategoryDistribution(),
-    ticketsRepository.getMonthlyEvolution(),
+    ticketsRepository.getDashboardMetrics(ctx),
+    ticketsRepository.getStatusDistribution(ctx),
+    ticketsRepository.getCategoryDistribution(ctx),
+    ticketsRepository.getMonthlyEvolution(ctx),
   ])
   return { metrics, statusDist, categoryDist, monthly }
 }

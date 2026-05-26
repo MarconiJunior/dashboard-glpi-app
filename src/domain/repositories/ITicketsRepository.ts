@@ -1,6 +1,7 @@
 // Interface do repositório de tickets — define o contrato sem implementação.
 
 import type { GlpiTicket, TicketStatus, TicketPriority } from "../entities/ticket"
+import type { UserContext } from "./UserContext"
 
 export interface TicketFilters {
   status?: TicketStatus[]
@@ -24,11 +25,11 @@ export interface DashboardMetrics {
 }
 
 export interface ITicketsRepository {
-  getMyTickets(filters?: TicketFilters): Promise<GlpiTicket[]>
-  getNewTickets(filters?: TicketFilters): Promise<GlpiTicket[]>
+  getMyTickets(ctx: UserContext, filters?: TicketFilters): Promise<GlpiTicket[]>
+  getNewTickets(ctx: UserContext, filters?: TicketFilters): Promise<GlpiTicket[]>
   getById(id: number): Promise<GlpiTicket | null>
-  getDashboardMetrics(): Promise<DashboardMetrics>
-  getStatusDistribution(): Promise<{ status: string; count: number }[]>
-  getCategoryDistribution(): Promise<{ category: string; count: number }[]>
-  getMonthlyEvolution(): Promise<{ month: string; abertos: number; resolvidos: number; tempoMedio: number }[]>
+  getDashboardMetrics(ctx: UserContext): Promise<DashboardMetrics>
+  getStatusDistribution(ctx: UserContext): Promise<{ status: string; count: number }[]>
+  getCategoryDistribution(ctx: UserContext): Promise<{ category: string; count: number }[]>
+  getMonthlyEvolution(ctx: UserContext): Promise<{ month: string; abertos: number; resolvidos: number; tempoMedio: number }[]>
 }
