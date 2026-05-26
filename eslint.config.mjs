@@ -18,7 +18,9 @@ export default defineConfig([
                 "selector": "CallExpression[callee.object.name='console'][callee.property.name!=/^(log|warn|error|info|trace)$/]",
                 "message": "Unexpected property on console object was called"
             }
-        ]
+        ],
+        "semi": ["error", "always"],
+        "quotes": ["error", "double", { "avoidEscape": true, "allowTemplateLiterals": false }]
     }
   },
   ...nextVitals,
