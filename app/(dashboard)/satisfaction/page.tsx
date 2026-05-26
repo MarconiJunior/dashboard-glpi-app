@@ -7,7 +7,7 @@ import { MetricCard } from "@/components/dashboard/metric-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-    ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, type
+    ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
