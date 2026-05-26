@@ -201,6 +201,9 @@ importers:
       eslint-plugin-react:
         specifier: ^7.37.5
         version: 7.37.5(eslint@9.39.4(jiti@2.6.1))
+      globals:
+        specifier: ^16.0.0
+        version: 16.4.0
       postcss:
         specifier: ^8.5
         version: 8.5.6
