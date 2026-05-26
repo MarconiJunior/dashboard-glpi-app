@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { AlertTriangle, Clock, Sparkles } from "lucide-react";
 import { useState } from "react";
@@ -21,14 +21,14 @@ import {
 } from "@/src/presentation/utils/ticket";
 import { useTickets } from "@/src/presentation/viewmodels/use-tickets";
 
-import type { GlpiTicket } from "@/src/domain/entities/ticket"
+import type { GlpiTicket } from "@/src/domain/entities/ticket";
 export default function NewTicketsPage() {
-  const { data, isLoading } = useTickets({ scope: "new" })
-  const tickets = data?.tickets ?? []
-  const critical = tickets.filter((t) => t.priority >= 5)
+  const { data, isLoading } = useTickets({ scope: "new" });
+  const tickets = data?.tickets ?? [];
+  const critical = tickets.filter((t) => t.priority >= 5);
 
-  const [selected, setSelected] = useState<GlpiTicket | null>(null)
-  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState<GlpiTicket | null>(null);
+  const [open, setOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -54,7 +54,7 @@ export default function NewTicketsPage() {
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {critical.map((t) => {
-              const overdue = isSlaOverdue(t)
+              const overdue = isSlaOverdue(t);
               return (
                 <Card
                   key={t.id}
@@ -63,8 +63,8 @@ export default function NewTicketsPage() {
                     overdue && "border-red-500/60",
                   )}
                   onClick={() => {
-                    setSelected(t)
-                    setOpen(true)
+                    setSelected(t);
+                    setOpen(true);
                   }}
                 >
                   <CardContent className="space-y-3 p-4">
@@ -77,10 +77,10 @@ export default function NewTicketsPage() {
                       <div className="flex items-center gap-1.5">
                         <Avatar className="h-5 w-5">
                           <AvatarFallback className="bg-muted text-[9px]">
-                            {getInitials(getRequesterName(t))}
+                            {getInitials(getRequesterName(t.requester))}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="truncate">{getRequesterName(t)}</span>
+                        <span className="truncate">{getRequesterName(t.requester)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -91,15 +91,15 @@ export default function NewTicketsPage() {
                       size="sm"
                       className="w-full"
                       onClick={(e) => {
-                        e.stopPropagation()
-                        toast.success("Chamado atribuído", { description: `#${t.id} agora é seu.` })
+                        e.stopPropagation();
+                        toast.success("Chamado atribuído", { description: `#${t.id} agora é seu.` });
                       }}
                     >
                       Assumir chamado
                     </Button>
                   </CardContent>
                 </Card>
-              )
+              );
             })}
           </div>
         </section>
@@ -131,14 +131,14 @@ export default function NewTicketsPage() {
           ) : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {tickets.map((t) => {
-                const overdue = isSlaOverdue(t)
+                const overdue = isSlaOverdue(t);
                 return (
                   <Card
                     key={t.id}
                     className="cursor-pointer border-border/60 transition-all hover:border-primary/40 hover:shadow-md"
                     onClick={() => {
-                      setSelected(t)
-                      setOpen(true)
+                      setSelected(t);
+                      setOpen(true);
                     }}
                   >
                     <CardContent className="space-y-3 p-4">
@@ -164,10 +164,10 @@ export default function NewTicketsPage() {
                         <div className="flex items-center gap-1.5">
                           <Avatar className="h-5 w-5">
                             <AvatarFallback className="bg-muted text-[9px]">
-                              {getInitials(getRequesterName(t))}
+                              {getInitials(getRequesterName(t.requester))}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="truncate">{getRequesterName(t)}</span>
+                          <span className="truncate">{getRequesterName(t.requester)}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
@@ -176,7 +176,7 @@ export default function NewTicketsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                )
+                );
               })}
             </div>
           )}
@@ -189,5 +189,5 @@ export default function NewTicketsPage() {
 
       <TicketDetailSheet ticket={selected} open={open} onOpenChange={setOpen} />
     </div>
-  )
+  );
 }

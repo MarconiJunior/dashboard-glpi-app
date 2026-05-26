@@ -1,6 +1,6 @@
 import mysql from "mysql2/promise";
 
-const globalForDb = globalThis as unknown as { _glpiPool: mysql.Pool }
+const globalForDb = globalThis as unknown as { _glpiPool: mysql.Pool };
 
 export const pool =
   globalForDb._glpiPool ??
@@ -14,6 +14,6 @@ export const pool =
     timezone: "+00:00",      // retorna datas em UTC
     dateStrings: false,      // retorna objetos Date
     decimalNumbers: true,
-  })
+  });
 
-if (process.env.NODE_ENV !== "production") globalForDb._glpiPool = pool
+if (process.env.NODE_ENV !== "production") globalForDb._glpiPool = pool;

@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 const config = {
   tempoMedio: { label: "Horas", color: "var(--chart-3)" },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function ResolutionTimeChart({ data }: { data: { month: string; tempoMedio: number }[] }) {
   return (
@@ -25,5 +25,5 @@ export function ResolutionTimeChart({ data }: { data: { month: string; tempoMedi
         />
       </LineChart>
     </ChartContainer>
-  )
+  );
 }

@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import { Moon, Sun, LogOut } from "lucide-react"
-import { useTheme } from "next-themes"
-import { useRouter } from "next/navigation"
-import useSWR from "swr"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { getInitials } from "@/src/presentation/utils/ticket"
-import type { SessionUser } from "@/src/infrastructure/auth/session"
+import { Moon, Sun, LogOut } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
+import useSWR from "swr";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { getInitials } from "@/src/presentation/utils/ticket";
+import type { SessionUser } from "@/src/infrastructure/auth/session";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function AppNavbar() {
-  const { theme, setTheme } = useTheme()
-  const router = useRouter()
-  const { data } = useSWR<SessionUser>("/api/me", fetcher, { revalidateOnFocus: false })
-  const fullName = data?.fullName ?? "Técnico"
+  const { theme, setTheme } = useTheme();
+  const router = useRouter();
+  const { data } = useSWR<SessionUser>("/api/me", fetcher, { revalidateOnFocus: false });
+  const fullName = data?.fullName ?? "Técnico";
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" })
-    router.push("/login")
-    router.refresh()
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
   }
 
   return (
@@ -62,5 +62,5 @@ export function AppNavbar() {
         </Button>
       </div>
     </header>
-  )
+  );
 }

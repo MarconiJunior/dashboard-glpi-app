@@ -1,6 +1,6 @@
 // Envio de e-mails via SMTP corporativo usando Nodemailer.
 
-import nodemailer from "nodemailer"
+import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -13,10 +13,10 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: process.env.NODE_ENV === "production",
   },
-})
+});
 
-const FROM = process.env.SMTP_FROM ?? "GLPI Desk <noreply@glpi.local>"
-const APP_NAME = "GLPI Desk"
+const FROM = process.env.SMTP_FROM ?? "GLPI Desk <noreply@glpi.local>";
+const APP_NAME = "GLPI Desk";
 
 export async function sendOtpEmail(to: string, code: string): Promise<void> {
   await transporter.sendMail({
@@ -25,11 +25,11 @@ export async function sendOtpEmail(to: string, code: string): Promise<void> {
     subject: `${code} — seu código de acesso ao ${APP_NAME}`,
     text: [
       `Seu código de acesso ao ${APP_NAME} é:`,
-      ``,
+      "",
       `  ${code}`,
-      ``,
-      `Este código expira em 5 minutos.`,
-      `Se você não solicitou este código, ignore este e-mail.`,
+      "",
+      "Este código expira em 5 minutos.",
+      "Se você não solicitou este código, ignore este e-mail.",
     ].join("\n"),
     html: `
       <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:32px 24px">
@@ -45,5 +45,5 @@ export async function sendOtpEmail(to: string, code: string): Promise<void> {
         </p>
       </div>
     `,
-  })
+  });
 }

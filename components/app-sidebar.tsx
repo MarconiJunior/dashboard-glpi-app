@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { ChevronLeft, Headphones, Inbox, LayoutDashboard, Sparkles, Star } from "lucide-react";
 import Link from "next/link";
@@ -13,11 +13,11 @@ const navItems = [
   { href: "/assigned", label: "Meus Chamados", icon: Inbox },
   { href: "/news", label: "Novos Chamados", icon: Sparkles },
   { href: "/satisfaction", label: "Satisfação", icon: Star },
-]
+];
 
 export function AppSidebar() {
-  const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(false)
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <aside
@@ -41,8 +41,8 @@ export function AppSidebar() {
 
         <nav className="flex-1 space-y-1 p-2">
           {navItems.map((item) => {
-            const Icon = item.icon
-            const active = pathname === item.href
+            const Icon = item.icon;
+            const active = pathname === item.href;
             return (
               <Link
                 key={item.href}
@@ -59,7 +59,7 @@ export function AppSidebar() {
                 <Icon className="h-4 w-4 shrink-0" />
                 {!collapsed && <span className="truncate">{item.label}</span>}
               </Link>
-            )
+            );
           })}
         </nav>
 
@@ -76,5 +76,5 @@ export function AppSidebar() {
         </div>
       </div>
     </aside>
-  )
+  );
 }

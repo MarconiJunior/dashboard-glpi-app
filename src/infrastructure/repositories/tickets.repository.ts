@@ -1,19 +1,19 @@
 // Implementação concreta de ITicketsRepository usando mysql2.
 // Todas as queries são somente leitura (SELECT).
 
-import { pool } from "../database/connection"
-import type { RowDataPacket } from "mysql2/promise"
-import type { GlpiTicket, TicketStatus, TicketPriority } from "@/src/domain/entities/ticket"
-import type { ITicketsRepository, TicketFilters, DashboardMetrics } from "@/src/domain/repositories/ITicketsRepository"
-import type { UserContext } from "@/src/domain/repositories/UserContext"
+import { pool } from "../database/connection";
+import type { RowDataPacket } from "mysql2/promise";
+import type { GlpiTicket, TicketStatus, TicketPriority } from "@/src/domain/entities/ticket";
+import type { ITicketsRepository, TicketFilters, DashboardMetrics } from "@/src/domain/repositories/ITicketsRepository";
+import type { UserContext } from "@/src/domain/repositories/UserContext";
 
 // ---------------------------------------------------------------------------
 // Helper de query
 // ---------------------------------------------------------------------------
 
 async function q<T extends RowDataPacket>(sql: string, params: unknown[] = []): Promise<T[]> {
-  const [rows] = await pool.query<T[]>(sql, params)
-  return rows
+  const [rows] = await pool.query<T[]>(sql, params);
+  return rows;
 }
 
 // ---------------------------------------------------------------------------
@@ -28,8 +28,8 @@ function mapStatus(n: number): TicketStatus {
     4: "pending",
     5: "solved",
     6: "closed",
-  }
-  return m[n] ?? "new"
+  };
+  return m[n] ?? "new";
 }
 
 interface RawTicketRow extends RowDataPacket {
@@ -103,7 +103,7 @@ function mapRow(row: RawTicketRow): GlpiTicket {
     entity: row.entity_name ?? "—",
     takeintoaccount_delay_stat: row.takeintoaccount_delay_stat,
     solve_delay_stat: row.solve_delay_stat > 0 ? row.solve_delay_stat : null,
-  }
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -111,33 +111,33 @@ function mapRow(row: RawTicketRow): GlpiTicket {
 // ---------------------------------------------------------------------------
 
 function applyFilters(items: GlpiTicket[], f: TicketFilters): GlpiTicket[] {
-  let r = items
-  if (f.status?.length) r = r.filter((t) => f.status!.includes(t.status))
-  if (f.priority?.length) r = r.filter((t) => f.priority!.includes(t.priority))
-  if (f.categoryId?.length) r = r.filter((t) => t.category != null && f.categoryId!.includes(t.category.id))
+  let r = items;
+  if (f.status?.length) r = r.filter((t) => f.status!.includes(t.status));
+  if (f.priority?.length) r = r.filter((t) => f.priority!.includes(t.priority));
+  if (f.categoryId?.length) r = r.filter((t) => t.category != null && f.categoryId!.includes(t.category.id));
   if (f.search) {
-    const term = f.search.toLowerCase()
+    const term = f.search.toLowerCase();
     r = r.filter(
       (t) =>
         t.name.toLowerCase().includes(term) ||
         String(t.id).includes(term) ||
         t.requester.name.toLowerCase().includes(term) ||
         (t.requester.firstname ?? "").toLowerCase().includes(term),
-    )
+    );
   }
-  if (f.dateFrom) r = r.filter((t) => new Date(t.date_creation) >= new Date(f.dateFrom!))
-  if (f.dateTo) r = r.filter((t) => new Date(t.date_creation) <= new Date(f.dateTo!))
+  if (f.dateFrom) r = r.filter((t) => new Date(t.date_creation) >= new Date(f.dateFrom!));
+  if (f.dateTo) r = r.filter((t) => new Date(t.date_creation) <= new Date(f.dateTo!));
   if (f.slaOverdue) {
-    const now = Date.now()
+    const now = Date.now();
     r = r.filter(
       (t) =>
         t.time_to_resolve != null &&
         new Date(t.time_to_resolve).getTime() < now &&
         t.status !== "solved" &&
         t.status !== "closed",
-    )
+    );
   }
-  return r
+  return r;
 }
 
 // ---------------------------------------------------------------------------
@@ -145,8 +145,8 @@ function applyFilters(items: GlpiTicket[], f: TicketFilters): GlpiTicket[] {
 // ---------------------------------------------------------------------------
 
 async function fetchMyTicketsRaw(ctx: UserContext): Promise<GlpiTicket[]> {
-  if (!ctx.technicianId) return []
-  const entities = ctx.allowedEntities.join(",") || "0"
+  if (!ctx.technicianId) return [];
+  const entities = ctx.allowedEntities.join(",") || "0";
   try {
     const rows = await q<RawTicketRow>(
       `
@@ -189,11 +189,11 @@ async function fetchMyTicketsRaw(ctx: UserContext): Promise<GlpiTicket[]> {
       ORDER BY t.date_creation DESC
       `,
       [ctx.technicianId, ctx.technicianId],
-    )
-    return rows.map(mapRow)
+    );
+    return rows.map(mapRow);
   } catch (err) {
-    console.error("[tickets.repository] fetchMyTicketsRaw:", err)
-    return []
+    console.error("[tickets.repository] fetchMyTicketsRaw:", err);
+    return [];
   }
 }
 
@@ -203,11 +203,11 @@ async function fetchMyTicketsRaw(ctx: UserContext): Promise<GlpiTicket[]> {
 
 class TicketsRepository implements ITicketsRepository {
   async getMyTickets(ctx: UserContext, filters: TicketFilters = {}): Promise<GlpiTicket[]> {
-    return applyFilters(await fetchMyTicketsRaw(ctx), filters)
+    return applyFilters(await fetchMyTicketsRaw(ctx), filters);
   }
 
   async getNewTickets(ctx: UserContext, filters: TicketFilters = {}): Promise<GlpiTicket[]> {
-    const entities = ctx.allowedEntities.join(",") || "0"
+    const entities = ctx.allowedEntities.join(",") || "0";
     try {
       const rows = await q<RawTicketRow>(
         `
@@ -246,11 +246,11 @@ class TicketsRepository implements ITicketsRepository {
         LIMIT 500
         `,
         [],
-      )
-      return applyFilters(rows.map(mapRow), filters)
+      );
+      return applyFilters(rows.map(mapRow), filters);
     } catch (err) {
-      console.error("[tickets.repository] getNewTickets:", err)
-      return []
+      console.error("[tickets.repository] getNewTickets:", err);
+      return [];
     }
   }
 
@@ -289,20 +289,20 @@ class TicketsRepository implements ITicketsRepository {
         LIMIT 1
         `,
         [id],
-      )
-      return rows.length > 0 ? mapRow(rows[0]) : null
+      );
+      return rows.length > 0 ? mapRow(rows[0]) : null;
     } catch (err) {
-      console.error("[tickets.repository] getById:", err)
-      return null
+      console.error("[tickets.repository] getById:", err);
+      return null;
     }
   }
 
   async getDashboardMetrics(ctx: UserContext): Promise<DashboardMetrics> {
-    const mine = await fetchMyTicketsRaw(ctx)
-    const entities = ctx.allowedEntities.join(",") || "0"
-    const solved = mine.filter((t) => t.status === "solved" || t.status === "closed")
-    const pending = mine.filter((t) => t.status === "pending" || t.status === "planned")
-    const now = Date.now()
+    const mine = await fetchMyTicketsRaw(ctx);
+    const entities = ctx.allowedEntities.join(",") || "0";
+    const solved = mine.filter((t) => t.status === "solved" || t.status === "closed");
+    const pending = mine.filter((t) => t.status === "pending" || t.status === "planned");
+    const now = Date.now();
 
     const slaOverdue = mine.filter(
       (t) =>
@@ -310,14 +310,14 @@ class TicketsRepository implements ITicketsRepository {
         new Date(t.time_to_resolve).getTime() < now &&
         t.status !== "solved" &&
         t.status !== "closed",
-    ).length
+    ).length;
 
     const avgResolutionHours =
       solved.reduce((acc, t) => acc + (t.solve_delay_stat ?? 0), 0) /
       Math.max(1, solved.length) /
-      3600
+      3600;
 
-    let avgSatisfaction = 0
+    let avgSatisfaction = 0;
     try {
       interface SatAvg extends RowDataPacket { avg_sat: number | null }
       const rows = await q<SatAvg>(
@@ -327,13 +327,13 @@ class TicketsRepository implements ITicketsRepository {
            ON tu.tickets_id = s.tickets_id AND tu.users_id = ? AND tu.type = 2
          WHERE s.satisfaction IS NOT NULL AND s.date_answered IS NOT NULL`,
         [ctx.technicianId],
-      )
-      avgSatisfaction = rows[0]?.avg_sat ?? 0
+      );
+      avgSatisfaction = rows[0]?.avg_sat ?? 0;
     } catch (err) {
-      console.error("[tickets.repository] getDashboardMetrics/satisfaction:", err)
+      console.error("[tickets.repository] getDashboardMetrics/satisfaction:", err);
     }
 
-    let newTickets = 0
+    let newTickets = 0;
     try {
       interface CountRow extends RowDataPacket { c: number }
       const rows = await q<CountRow>(
@@ -346,10 +346,10 @@ class TicketsRepository implements ITicketsRepository {
            AND t.entities_id IN (${entities})
            AND tu_tec.id IS NULL`,
         [],
-      )
-      newTickets = rows[0]?.c ?? 0
+      );
+      newTickets = rows[0]?.c ?? 0;
     } catch (err) {
-      console.error("[tickets.repository] getDashboardMetrics/newTickets:", err)
+      console.error("[tickets.repository] getDashboardMetrics/newTickets:", err);
     }
 
     return {
@@ -361,63 +361,63 @@ class TicketsRepository implements ITicketsRepository {
       avgSatisfaction,
       slaOverdue,
       total: mine.length,
-    }
+    };
   }
 
   async getStatusDistribution(ctx: UserContext): Promise<{ status: string; count: number }[]> {
-    const mine = await fetchMyTicketsRaw(ctx)
-    const counts: Record<string, number> = {}
-    mine.forEach((t) => { counts[t.status] = (counts[t.status] ?? 0) + 1 })
-    return Object.entries(counts).map(([status, count]) => ({ status, count }))
+    const mine = await fetchMyTicketsRaw(ctx);
+    const counts: Record<string, number> = {};
+    mine.forEach((t) => { counts[t.status] = (counts[t.status] ?? 0) + 1; });
+    return Object.entries(counts).map(([status, count]) => ({ status, count }));
   }
 
   async getCategoryDistribution(ctx: UserContext): Promise<{ category: string; count: number }[]> {
-    const mine = await fetchMyTicketsRaw(ctx)
-    const counts: Record<string, number> = {}
+    const mine = await fetchMyTicketsRaw(ctx);
+    const counts: Record<string, number> = {};
     mine.forEach((t) => {
-      const name = t.category?.name ?? "Sem categoria"
-      counts[name] = (counts[name] ?? 0) + 1
-    })
+      const name = t.category?.name ?? "Sem categoria";
+      counts[name] = (counts[name] ?? 0) + 1;
+    });
     return Object.entries(counts)
       .map(([category, count]) => ({ category, count }))
-      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => b.count - a.count);
   }
 
   async getMonthlyEvolution(ctx: UserContext): Promise<{ month: string; abertos: number; resolvidos: number; tempoMedio: number }[]> {
-    const mine = await fetchMyTicketsRaw(ctx)
-    const buckets = new Map<string, { opened: number; solved: number; sumHours: number }>()
-    const months: string[] = []
+    const mine = await fetchMyTicketsRaw(ctx);
+    const buckets = new Map<string, { opened: number; solved: number; sumHours: number }>();
+    const months: string[] = [];
 
     for (let i = 5; i >= 0; i--) {
-      const d = new Date()
-      d.setMonth(d.getMonth() - i)
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-      months.push(key)
-      buckets.set(key, { opened: 0, solved: 0, sumHours: 0 })
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      months.push(key);
+      buckets.set(key, { opened: 0, solved: 0, sumHours: 0 });
     }
 
     mine.forEach((t) => {
-      const d = new Date(t.date_creation)
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-      const b = buckets.get(key)
+      const d = new Date(t.date_creation);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const b = buckets.get(key);
       if (b) {
-        b.opened++
-        if (t.solve_delay_stat) { b.sumHours += t.solve_delay_stat / 3600; b.solved++ }
+        b.opened++;
+        if (t.solve_delay_stat) { b.sumHours += t.solve_delay_stat / 3600; b.solved++; }
       }
-    })
+    });
 
     return months.map((key) => {
-      const b = buckets.get(key)!
-      const [y, m] = key.split("-")
-      const monthName = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("pt-BR", { month: "short" })
+      const b = buckets.get(key)!;
+      const [y, m] = key.split("-");
+      const monthName = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("pt-BR", { month: "short" });
       return {
         month: monthName,
         abertos: b.opened,
         resolvidos: b.solved,
         tempoMedio: b.solved > 0 ? Number((b.sumHours / b.solved).toFixed(1)) : 0,
-      }
-    })
+      };
+    });
   }
 }
 
-export const ticketsRepository: ITicketsRepository = new TicketsRepository()
+export const ticketsRepository: ITicketsRepository = new TicketsRepository();

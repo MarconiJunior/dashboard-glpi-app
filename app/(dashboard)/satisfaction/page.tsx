@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { MessageSquare, Star, ThumbsDown, ThumbsUp, TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
@@ -11,16 +11,17 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { GlpiSatisfaction } from "@/src/domain/entities/ticket";
 import { formatDate, getInitials, getRequesterName } from "@/src/presentation/utils/ticket";
 import { useSatisfaction } from "@/src/presentation/viewmodels/use-satisfaction";
 
 const trendConfig = {
   media: { label: "Média", color: "var(--chart-1)" },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 const distConfig = {
   total: { label: "Avaliações", color: "var(--chart-2)" },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 function StarRating({ value }: { value: number }) {
   return (
@@ -35,15 +36,15 @@ function StarRating({ value }: { value: number }) {
         />
       ))}
     </div>
-  )
+  );
 }
 
 export default function SatisfactionPage() {
-  const { data, isLoading } = useSatisfaction()
-  const stats = data?.stats
-  const list = data?.list ?? []
-  const monthly = data?.monthly ?? []
-  const distribution = data?.distribution ?? []
+  const { data, isLoading } = useSatisfaction();
+  const stats = data?.stats;
+  const list = data?.list ?? [];
+  const monthly = data?.monthly ?? [];
+  const distribution = data?.distribution ?? [];
 
   return (
     <div className="space-y-6">
@@ -157,19 +158,19 @@ export default function SatisfactionPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {list.map((s: any) => (
+              {list.map((s: GlpiSatisfaction) => (
                 <div
                   key={s.id}
                   className="flex gap-3 rounded-lg border border-border/60 bg-muted/20 p-4 transition-colors hover:bg-muted/40"
                 >
                   <Avatar className="h-9 w-9 shrink-0">
                     <AvatarFallback className="bg-primary/15 text-xs text-primary">
-                      {getInitials(getRequesterName({ requester: s.user } as any))}
+                      {getInitials(getRequesterName( s.user ))}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium">{getRequesterName({ requester: s.user } as any)}</span>
+                      <span className="text-sm font-medium">{getRequesterName( s.user )}</span>
                       <StarRating value={s.satisfaction} />
                       <span className="ml-auto text-xs text-muted-foreground">{formatDate(s.date_answered)}</span>
                     </div>
@@ -190,5 +191,5 @@ export default function SatisfactionPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

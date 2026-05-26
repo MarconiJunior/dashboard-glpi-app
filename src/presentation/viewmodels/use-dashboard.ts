@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import useSWR from "swr"
-import type { DashboardMetrics } from "@/src/domain/repositories/ITicketsRepository"
+import useSWR from "swr";
+import type { DashboardMetrics } from "@/src/domain/repositories/ITicketsRepository";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export interface DashboardViewModel {
   metrics: DashboardMetrics
@@ -15,5 +15,5 @@ export interface DashboardViewModel {
 export function useDashboard() {
   return useSWR<DashboardViewModel>("/api/dashboard", fetcher, {
     refreshInterval: 30_000,
-  })
+  });
 }

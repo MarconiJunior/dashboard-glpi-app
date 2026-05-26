@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import useSWR from "swr"
-import type { GlpiSatisfaction } from "@/src/domain/entities/ticket"
-import type { SatisfactionStats } from "@/src/domain/repositories/ISatisfactionRepository"
+import useSWR from "swr";
+import type { GlpiSatisfaction } from "@/src/domain/entities/ticket";
+import type { SatisfactionStats } from "@/src/domain/repositories/ISatisfactionRepository";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export interface SatisfactionViewModel {
   list: GlpiSatisfaction[]
@@ -16,5 +16,5 @@ export interface SatisfactionViewModel {
 export function useSatisfaction() {
   return useSWR<SatisfactionViewModel>("/api/satisfaction", fetcher, {
     refreshInterval: 60_000,
-  })
+  });
 }

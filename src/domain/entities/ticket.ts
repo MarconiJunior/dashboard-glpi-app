@@ -66,7 +66,7 @@ export const STATUS_LABELS: Record<TicketStatus, string> = {
   pending: "Pendente",
   solved: "Resolvido",
   closed: "Fechado",
-}
+};
 
 export const PRIORITY_LABELS: Record<TicketPriority, string> = {
   1: "Muito Baixa",
@@ -75,4 +75,4 @@ export const PRIORITY_LABELS: Record<TicketPriority, string> = {
   4: "Alta",
   5: "Muito Alta",
   6: "Crítica",
-}
+};

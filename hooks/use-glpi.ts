@@ -1,5 +1,5 @@
-export { useDashboard } from "@/src/presentation/viewmodels/use-dashboard"
-export { useTickets } from "@/src/presentation/viewmodels/use-tickets"
-export { useSatisfaction } from "@/src/presentation/viewmodels/use-satisfaction"
-export { useCategories } from "@/src/presentation/viewmodels/use-categories"
-export type { TicketsQuery } from "@/src/presentation/viewmodels/use-tickets"
+export { useDashboard } from "@/src/presentation/viewmodels/use-dashboard";
+export { useTickets } from "@/src/presentation/viewmodels/use-tickets";
+export { useSatisfaction } from "@/src/presentation/viewmodels/use-satisfaction";
+export { useCategories } from "@/src/presentation/viewmodels/use-categories";
+export type { TicketsQuery } from "@/src/presentation/viewmodels/use-tickets";

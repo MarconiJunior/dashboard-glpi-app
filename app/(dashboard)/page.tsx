@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { useDashboard } from "@/src/presentation/viewmodels/use-dashboard"
-import { MetricCard } from "@/components/dashboard/metric-card"
-import { StatusChart } from "@/components/dashboard/status-chart"
-import { CategoryChart } from "@/components/dashboard/category-chart"
-import { MonthlyChart } from "@/components/dashboard/monthly-chart"
-import { ResolutionTimeChart } from "@/components/dashboard/resolution-time-chart"
-import { Inbox, Sparkles, CheckCircle2, Clock, Timer, Star, AlertTriangle, Activity } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useDashboard } from "@/src/presentation/viewmodels/use-dashboard";
+import { MetricCard } from "@/components/dashboard/metric-card";
+import { StatusChart } from "@/components/dashboard/status-chart";
+import { CategoryChart } from "@/components/dashboard/category-chart";
+import { MonthlyChart } from "@/components/dashboard/monthly-chart";
+import { ResolutionTimeChart } from "@/components/dashboard/resolution-time-chart";
+import { Inbox, Sparkles, CheckCircle2, Clock, Timer, Star, AlertTriangle, Activity } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
-  const { data, isLoading } = useDashboard()
-  const m = data?.metrics
+  const { data, isLoading } = useDashboard();
+  const m = data?.metrics;
 
   return (
     <div className="space-y-6">
@@ -134,5 +134,5 @@ export default function DashboardPage() {
         </Card>
       </section>
     </div>
-  )
+  );
 }

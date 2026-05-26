@@ -1,7 +1,7 @@
 // Interface do repositório de tickets — define o contrato sem implementação.
 
-import type { GlpiTicket, TicketStatus, TicketPriority } from "../entities/ticket"
-import type { UserContext } from "./UserContext"
+import type { GlpiTicket, TicketStatus, TicketPriority } from "../entities/ticket";
+import type { UserContext } from "./UserContext";
 
 export interface TicketFilters {
   status?: TicketStatus[]

@@ -1,42 +1,42 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Headphones, Loader2, Mail, KeyRound, ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
+import { useState } from "react";
+import { Headphones, Loader2, Mail, KeyRound, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 type Step = "email" | "code"
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [step, setStep] = useState<Step>("email")
-  const [email, setEmail] = useState("")
-  const [code, setCode] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const router = useRouter();
+  const [step, setStep] = useState<Step>("email");
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // ---------------------------------------------------------------------------
   // Passo 1 — enviar OTP
   // ---------------------------------------------------------------------------
 
   async function handleRequestOtp(e: React.FormEvent) {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
     try {
       const res = await fetch("/api/auth/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
-      })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error ?? "Erro ao enviar código."); return }
-      setStep("code")
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Erro ao enviar código."); return; }
+      setStep("code");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -45,21 +45,21 @@ export default function LoginPage() {
   // ---------------------------------------------------------------------------
 
   async function handleVerifyOtp(e: React.FormEvent) {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
     try {
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code }),
-      })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error ?? "Código inválido."); return }
-      router.push("/")
-      router.refresh()
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Código inválido."); return; }
+      router.push("/");
+      router.refresh();
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -155,7 +155,7 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => { setStep("email"); setCode(""); setError("") }}
+                onClick={() => { setStep("email"); setCode(""); setError(""); }}
                 className="flex w-full items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-3 w-3" /> Usar outro e-mail
@@ -169,5 +169,5 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
-  )
+  );
 }

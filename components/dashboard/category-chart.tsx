@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 const config = {
   count: { label: "Chamados", color: "var(--chart-2)" },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function CategoryChart({ data }: { data: { category: string; count: number }[] }) {
   return (
@@ -18,5 +18,5 @@ export function CategoryChart({ data }: { data: { category: string; count: numbe
         <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ChartContainer>
-  )
+  );
 }

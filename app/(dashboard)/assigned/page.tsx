@@ -11,5 +11,5 @@ export default function MyTicketsPage() {
       </div>
       <TicketsTable scope="mine" />
     </div>
-  )
+  );
 }

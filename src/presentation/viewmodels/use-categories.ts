@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import useSWR from "swr"
+import useSWR from "swr";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function useCategories() {
-  return useSWR<{ categories: { id: number; name: string }[] }>("/api/categories", fetcher)
+  return useSWR<{ categories: { id: number; name: string }[] }>("/api/categories", fetcher);
 }

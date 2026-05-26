@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { STATUS_LABELS, type TicketStatus } from "@/src/domain/entities/ticket"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { STATUS_LABELS, type TicketStatus } from "@/src/domain/entities/ticket";
 
 const config = {
   count: { label: "Chamados", color: "var(--chart-1)" },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function StatusChart({ data }: { data: { status: string; count: number }[] }) {
   const formatted = data.map((d) => ({
     status: STATUS_LABELS[d.status as TicketStatus] ?? d.status,
     count: d.count,
-  }))
+  }));
 
   return (
     <ChartContainer config={config} className="h-72 w-full">
@@ -31,5 +31,5 @@ export function StatusChart({ data }: { data: { status: string; count: number }[
         <Bar dataKey="count" fill="var(--color-count)" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ChartContainer>
-  )
+  );
 }

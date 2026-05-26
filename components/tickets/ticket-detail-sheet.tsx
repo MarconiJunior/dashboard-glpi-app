@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { AlertTriangle, Building2, Calendar, Clock, Hash, Tag, User } from "lucide-react";
 
@@ -7,14 +7,14 @@ import { Separator } from "@/components/ui/separator";
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle
 } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import {
     formatDate, formatRelative, getInitials, getRequesterName, isSlaOverdue
 } from "@/src/presentation/utils/ticket";
-import { cn } from "@/lib/utils";
 
 import { PriorityBadge, StatusBadge } from "./badges";
 
-import type { GlpiTicket } from "@/src/domain/entities/ticket"
+import type { GlpiTicket } from "@/src/domain/entities/ticket";
 interface Props {
   ticket: GlpiTicket | null
   open: boolean
@@ -49,11 +49,11 @@ export function TicketDetailSheet({ ticket, open, onOpenChange }: Props) {
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-primary/15 text-primary">
-                      {getInitials(getRequesterName(ticket))}
+                      {getInitials(getRequesterName(ticket.requester))}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{getRequesterName(ticket)}</p>
+                    <p className="truncate text-sm font-medium">{getRequesterName(ticket.requester)}</p>
                     <p className="truncate text-xs text-muted-foreground">{ticket.requester.email}</p>
                   </div>
                 </div>
@@ -64,7 +64,7 @@ export function TicketDetailSheet({ ticket, open, onOpenChange }: Props) {
               <Section title="Detalhes">
                 <DetailRow icon={Tag} label="Categoria" value={ticket.category?.completename ?? "—"} />
                 <DetailRow icon={Building2} label="Entidade" value={ticket.entity} />
-                <DetailRow icon={User} label="Técnico" value={ticket.technician ? getRequesterName({ ...ticket, requester: ticket.technician }) : "Não atribuído"} />
+                <DetailRow icon={User} label="Técnico" value={ticket.technician ? getRequesterName(ticket.technician) : "Não atribuído"} />
                 <DetailRow icon={Calendar} label="Aberto em" value={`${formatDate(ticket.date_creation, { hour: "2-digit", minute: "2-digit" })} · ${formatRelative(ticket.date_creation)}`} />
                 {ticket.solvedate && (
                   <DetailRow icon={Calendar} label="Resolvido em" value={formatDate(ticket.solvedate, { hour: "2-digit", minute: "2-digit" })} />
@@ -90,13 +90,13 @@ export function TicketDetailSheet({ ticket, open, onOpenChange }: Props) {
         )}
       </SheetContent>
     </Sheet>
-  )
+  );
 }
 
 function decodeHtml(html: string) {
-  const txt = document.createElement("textarea")
-  txt.innerHTML = html
-  return txt.value
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -105,7 +105,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
       <div className="space-y-2">{children}</div>
     </div>
-  )
+  );
 }
 
 function DetailRow({
@@ -127,5 +127,5 @@ function DetailRow({
       </span>
       <span className={cn("text-right font-medium", className)}>{value}</span>
     </div>
-  )
+  );
 }

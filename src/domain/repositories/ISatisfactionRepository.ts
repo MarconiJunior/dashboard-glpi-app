@@ -1,7 +1,7 @@
 // Interface do repositório de satisfação.
 
-import type { GlpiSatisfaction } from "../entities/ticket"
-import type { UserContext } from "./UserContext"
+import type { GlpiSatisfaction } from "../entities/ticket";
+import type { UserContext } from "./UserContext";
 
 export interface SatisfactionStats {
   total: number

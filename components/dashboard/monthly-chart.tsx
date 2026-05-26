@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from "@/components/ui/chart"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from "@/components/ui/chart";
 
 const config = {
   abertos: { label: "Abertos", color: "var(--chart-1)" },
   resolvidos: { label: "Resolvidos", color: "var(--chart-2)" },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function MonthlyChart({ data }: { data: { month: string; abertos: number; resolvidos: number }[] }) {
   return (
@@ -31,5 +31,5 @@ export function MonthlyChart({ data }: { data: { month: string; abertos: number;
         <Area dataKey="resolvidos" type="monotone" stroke="var(--color-resolvidos)" fill="url(#fillResolvidos)" strokeWidth={2} />
       </AreaChart>
     </ChartContainer>
-  )
+  );
 }

@@ -1,26 +1,38 @@
-"use client"
+"use client";
 
-import { useMemo, useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Inbox, Download, Filter, X } from "lucide-react"
-import { useTickets } from "@/src/presentation/viewmodels/use-tickets"
-import { useCategories } from "@/src/presentation/viewmodels/use-categories"
-import { StatusBadge, PriorityBadge } from "./badges"
-import { TicketDetailSheet } from "./ticket-detail-sheet"
-import { formatDate, formatRelative, getInitials, getRequesterName, isSlaOverdue, exportToCSV } from "@/src/presentation/utils/ticket"
-import type { GlpiTicket, TicketStatus, TicketPriority } from "@/src/domain/entities/ticket"
-import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
+import {
+    AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Download, Filter, Inbox, Search, X
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle
+} from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import {
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import {
+    exportToCSV, formatDate, formatRelative, getInitials, getRequesterName, isSlaOverdue
+} from "@/src/presentation/utils/ticket";
+import { useCategories } from "@/src/presentation/viewmodels/use-categories";
+import { useTickets } from "@/src/presentation/viewmodels/use-tickets";
+
+import { PriorityBadge, StatusBadge } from "./badges";
+import { TicketDetailSheet } from "./ticket-detail-sheet";
+
+import type { GlpiTicket, TicketStatus, TicketPriority } from "@/src/domain/entities/ticket";
 type SortKey = "id" | "name" | "priority" | "date_creation" | "time_to_resolve"
 type SortDir = "asc" | "desc"
 
@@ -28,20 +40,38 @@ interface Props {
   scope: "mine" | "new"
 }
 
-const PAGE_SIZE = 12
+interface SortIconProps {
+  k: SortKey
+  sort: {
+    key: SortKey
+    dir: SortDir
+  }
+}
+
+const PAGE_SIZE = 12;
+
+function SortIcon({ k, sort }: SortIconProps) {
+  if (sort.key !== k) {
+    return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+  }
+
+  return sort.dir === "asc"
+    ? <ArrowUp className="h-3 w-3" />
+    : <ArrowDown className="h-3 w-3" />;
+}
 
 export function TicketsTable({ scope }: Props) {
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [priorityFilter, setPriorityFilter] = useState<string>("all")
-  const [categoryFilter, setCategoryFilter] = useState<string>("all")
-  const [slaOverdue, setSlaOverdue] = useState(false)
-  const [page, setPage] = useState(1)
-  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "date_creation", dir: "desc" })
-  const [selected, setSelected] = useState<GlpiTicket | null>(null)
-  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [slaOverdue, setSlaOverdue] = useState(false);
+  const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "date_creation", dir: "desc" });
+  const [selected, setSelected] = useState<GlpiTicket | null>(null);
+  const [open, setOpen] = useState(false);
 
-  const { data: catData } = useCategories()
+  const { data: catData } = useCategories();
   const { data, isLoading } = useTickets({
     scope,
     search: search.length > 1 ? search : undefined,
@@ -49,60 +79,55 @@ export function TicketsTable({ scope }: Props) {
     priority: priorityFilter !== "all" ? [Number(priorityFilter)] : undefined,
     categoryId: categoryFilter !== "all" ? [Number(categoryFilter)] : undefined,
     slaOverdue,
-  })
+  });
 
   const sorted = useMemo(() => {
-    const items = [...(data?.tickets ?? [])]
+    const items = [...(data?.tickets ?? [])];
     items.sort((a, b) => {
-      const dir = sort.dir === "asc" ? 1 : -1
-      const av = a[sort.key]
-      const bv = b[sort.key]
-      if (av == null) return 1
-      if (bv == null) return -1
-      if (av < bv) return -1 * dir
-      if (av > bv) return 1 * dir
-      return 0
-    })
-    return items
-  }, [data, sort])
+      const dir = sort.dir === "asc" ? 1 : -1;
+      const av = a[sort.key];
+      const bv = b[sort.key];
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    return items;
+  }, [data, sort]);
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
-  const pageItems = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const pageItems = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const toggleSort = (key: SortKey) => {
-    setSort((prev) => (prev.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }))
-  }
-
-  const SortIcon = ({ k }: { k: SortKey }) => {
-    if (sort.key !== k) return <ArrowUpDown className="h-3 w-3 opacity-40" />
-    return sort.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-  }
+    setSort((prev) => (prev.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
+  };
 
   const clearFilters = () => {
-    setSearch("")
-    setStatusFilter("all")
-    setPriorityFilter("all")
-    setCategoryFilter("all")
-    setSlaOverdue(false)
-  }
+    setSearch("");
+    setStatusFilter("all");
+    setPriorityFilter("all");
+    setCategoryFilter("all");
+    setSlaOverdue(false);
+  };
 
   const hasActiveFilters =
-    search.length > 0 || statusFilter !== "all" || priorityFilter !== "all" || categoryFilter !== "all" || slaOverdue
+    search.length > 0 || statusFilter !== "all" || priorityFilter !== "all" || categoryFilter !== "all" || slaOverdue;
 
   const handleExport = () => {
     const rows = sorted.map((t) => ({
       ID: t.id,
       Titulo: t.name,
-      Solicitante: getRequesterName(t),
+      Solicitante: getRequesterName(t.requester),
       Categoria: t.category?.name ?? "",
       Prioridade: t.priority,
       Status: t.status,
       "Data de abertura": formatDate(t.date_creation),
       "SLA": t.time_to_resolve ? formatDate(t.time_to_resolve) : "",
-    }))
-    exportToCSV(rows, `chamados-${scope}-${new Date().toISOString().slice(0, 10)}.csv`)
-    toast.success("Exportação concluída", { description: `${rows.length} chamados exportados.` })
-  }
+    }));
+    exportToCSV(rows, `chamados-${scope}-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success("Exportação concluída", { description: `${rows.length} chamados exportados.` });
+  };
 
   return (
     <div className="space-y-4">
@@ -114,14 +139,14 @@ export function TicketsTable({ scope }: Props) {
             className="pl-9"
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
+              setSearch(e.target.value);
+              setPage(1);
             }}
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -136,7 +161,7 @@ export function TicketsTable({ scope }: Props) {
             </SelectContent>
           </Select>
 
-          <Select value={priorityFilter} onValueChange={(v) => { setPriorityFilter(v); setPage(1) }}>
+          <Select value={priorityFilter} onValueChange={(v) => { setPriorityFilter(v); setPage(1); }}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Prioridade" />
             </SelectTrigger>
@@ -151,7 +176,7 @@ export function TicketsTable({ scope }: Props) {
             </SelectContent>
           </Select>
 
-          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1) }}>
+          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1); }}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Categoria" />
             </SelectTrigger>
@@ -164,7 +189,7 @@ export function TicketsTable({ scope }: Props) {
           </Select>
 
           <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-1.5">
-            <Switch id="sla" checked={slaOverdue} onCheckedChange={(v) => { setSlaOverdue(v); setPage(1) }} />
+            <Switch id="sla" checked={slaOverdue} onCheckedChange={(v) => { setSlaOverdue(v); setPage(1); }} />
             <Label htmlFor="sla" className="cursor-pointer text-xs">SLA vencido</Label>
           </div>
 
@@ -185,21 +210,21 @@ export function TicketsTable({ scope }: Props) {
           <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40">
               <TableHead className="w-[80px] cursor-pointer" onClick={() => toggleSort("id")}>
-                <div className="flex items-center gap-1 text-xs">ID <SortIcon k="id" /></div>
+                <div className="flex items-center gap-1 text-xs">ID <SortIcon k="id" sort={sort} /></div>
               </TableHead>
               <TableHead className="cursor-pointer" onClick={() => toggleSort("name")}>
-                <div className="flex items-center gap-1 text-xs">Título <SortIcon k="name" /></div>
+                <div className="flex items-center gap-1 text-xs">Título <SortIcon k="name" sort={sort} /></div>
               </TableHead>
               <TableHead className="hidden md:table-cell">Solicitante</TableHead>
               <TableHead className="hidden cursor-pointer lg:table-cell" onClick={() => toggleSort("priority")}>
-                <div className="flex items-center gap-1 text-xs">Prioridade <SortIcon k="priority" /></div>
+                <div className="flex items-center gap-1 text-xs">Prioridade <SortIcon k="priority" sort={sort} /></div>
               </TableHead>
               <TableHead className="hidden lg:table-cell">Categoria</TableHead>
               <TableHead className="hidden cursor-pointer xl:table-cell" onClick={() => toggleSort("date_creation")}>
-                <div className="flex items-center gap-1 text-xs">Aberto <SortIcon k="date_creation" /></div>
+                <div className="flex items-center gap-1 text-xs">Aberto <SortIcon k="date_creation" sort={sort} /></div>
               </TableHead>
               <TableHead className="hidden cursor-pointer md:table-cell" onClick={() => toggleSort("time_to_resolve")}>
-                <div className="flex items-center gap-1 text-xs">SLA <SortIcon k="time_to_resolve" /></div>
+                <div className="flex items-center gap-1 text-xs">SLA <SortIcon k="time_to_resolve" sort={sort} /></div>
               </TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
@@ -243,31 +268,31 @@ export function TicketsTable({ scope }: Props) {
 
             {!isLoading &&
               pageItems.map((t) => {
-                const overdue = isSlaOverdue(t)
+                const overdue = isSlaOverdue(t);
                 return (
                   <TableRow
                     key={t.id}
                     className="cursor-pointer transition-colors hover:bg-muted/40"
                     onClick={() => {
-                      setSelected(t)
-                      setOpen(true)
+                      setSelected(t);
+                      setOpen(true);
                     }}
                   >
                     <TableCell className="font-mono text-xs text-muted-foreground">#{t.id}</TableCell>
                     <TableCell className="max-w-[280px]">
                       <p className="truncate font-medium">{t.name}</p>
                       <p className="truncate text-xs text-muted-foreground md:hidden">
-                        {getRequesterName(t)} · {formatRelative(t.date_creation)}
+                        {getRequesterName(t.requester)} · {formatRelative(t.date_creation)}
                       </p>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
                           <AvatarFallback className="bg-muted text-[10px]">
-                            {getInitials(getRequesterName(t))}
+                            {getInitials(getRequesterName(t.requester))}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="truncate text-sm">{getRequesterName(t)}</span>
+                        <span className="truncate text-sm">{getRequesterName(t.requester)}</span>
                       </div>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
@@ -293,7 +318,7 @@ export function TicketsTable({ scope }: Props) {
                       <StatusBadge status={t.status as TicketStatus} />
                     </TableCell>
                   </TableRow>
-                )
+                );
               })}
           </TableBody>
         </Table>
@@ -317,5 +342,5 @@ export function TicketsTable({ scope }: Props) {
 
       <TicketDetailSheet ticket={selected} open={open} onOpenChange={setOpen} />
     </div>
-  )
+  );
 }

@@ -4,8 +4,8 @@ import { sendOtpEmail } from "@/src/infrastructure/auth/email";
 import { createOtp, hasActiveOtp, verifyOtp } from "@/src/infrastructure/auth/otp-store";
 import { pool } from "@/src/infrastructure/database/connection";
 
-import type { RowDataPacket } from "mysql2/promise"
-import type { SessionUser } from "@/src/infrastructure/auth/session"
+import type { RowDataPacket } from "mysql2/promise";
+import type { SessionUser } from "@/src/infrastructure/auth/session";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -43,8 +43,8 @@ async function findUserByEmail(email: string): Promise<GlpiUserRow | null> {
     LIMIT 1
     `,
     [email.toLowerCase()],
-  )
-  return rows[0] ?? null
+  );
+  return rows[0] ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -56,8 +56,8 @@ async function isTechnician(userId: number): Promise<boolean> {
   const [rows] = await pool.query<CountRow[]>(
     "SELECT COUNT(*) AS c FROM glpi_tickets_users WHERE users_id = ? AND type = 2 LIMIT 1",
     [userId],
-  )
-  return (rows[0]?.c ?? 0) > 0
+  );
+  return (rows[0]?.c ?? 0) > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,8 +74,8 @@ async function getUserEntities(userId: number): Promise<number[]> {
       AND entities_id IS NOT NULL
     `,
     [userId],
-  )
-  return rows.map((r) => r.entities_id)
+  );
+  return rows.map((r) => r.entities_id);
 }
 
 // ---------------------------------------------------------------------------
@@ -85,23 +85,23 @@ async function getUserEntities(userId: number): Promise<number[]> {
 export async function requestOtp(email: string): Promise<RequestOtpResult> {
   // Rate-limit: não reenviar se já existe OTP ativo
   if (hasActiveOtp(email)) {
-    return { ok: false, reason: "otp_already_sent" }
+    return { ok: false, reason: "otp_already_sent" };
   }
 
-  const user = await findUserByEmail(email)
-  if (!user) return { ok: false, reason: "user_not_found" }
+  const user = await findUserByEmail(email);
+  if (!user) return { ok: false, reason: "user_not_found" };
 
-  const technician = await isTechnician(user.id)
-  if (!technician) return { ok: false, reason: "not_a_technician" }
+  const technician = await isTechnician(user.id);
+  if (!technician) return { ok: false, reason: "not_a_technician" };
 
-  const code = createOtp(email)
+  const code = createOtp(email);
 
   try {
-    await sendOtpEmail(email, code)
-    return { ok: true }
+    await sendOtpEmail(email, code);
+    return { ok: true };
   } catch (err) {
-    console.error("[auth] sendOtpEmail error:", err)
-    return { ok: false, reason: "send_error" }
+    console.error("[auth] sendOtpEmail error:", err);
+    return { ok: false, reason: "send_error" };
   }
 }
 
@@ -110,16 +110,16 @@ export async function requestOtp(email: string): Promise<RequestOtpResult> {
 // ---------------------------------------------------------------------------
 
 export async function verifyOtpAndGetUser(email: string, code: string): Promise<VerifyOtpResult> {
-  const result = verifyOtp(email, code)
+  const result = verifyOtp(email, code);
   if (!result.ok) {
-    return { ok: false, reason: result.reason || "not_found" }
+    return { ok: false, reason: result.reason || "not_found" };
   }
 
-  const user = await findUserByEmail(email)
-  if (!user) return { ok: false, reason: "not_found" }
+  const user = await findUserByEmail(email);
+  if (!user) return { ok: false, reason: "not_found" };
 
-  const fullName = `${user.firstname ?? ""} ${user.realname ?? ""}`.trim() || user.name
-  const entities = await getUserEntities(user.id)
+  const fullName = `${user.firstname ?? ""} ${user.realname ?? ""}`.trim() || user.name;
+  const entities = await getUserEntities(user.id);
 
   return {
     ok: true,
@@ -129,5 +129,5 @@ export async function verifyOtpAndGetUser(email: string, code: string): Promise<
       email: email.toLowerCase(),
       entities,
     },
-  }
+  };
 }

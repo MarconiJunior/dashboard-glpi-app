@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { Card, CardContent } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-import type { LucideIcon } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MetricCardProps {
   label: string
@@ -21,7 +21,7 @@ const accentMap: Record<NonNullable<MetricCardProps["accent"]>, string> = {
   emerald: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
   red: "bg-red-500/15 text-red-600 dark:text-red-400",
   violet: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
-}
+};
 
 export function MetricCard({ label, value, hint, icon: Icon, accent = "primary", loading }: MetricCardProps) {
   return (
@@ -41,5 +41,5 @@ export function MetricCard({ label, value, hint, icon: Icon, accent = "primary",
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
