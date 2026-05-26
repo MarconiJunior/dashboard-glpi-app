@@ -1,0 +1,20 @@
+DB_USER="USER"
+DB_PASSWORD="PASSWORD"
+DB_HOST="0.0.0.0"
+DB_NAME="glpi"
+
+# ---------------------------------------------------------------------------
+# Autenticação — iron-session
+# Gere um segredo forte: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# ---------------------------------------------------------------------------
+SESSION_SECRET=""
+
+# ---------------------------------------------------------------------------
+# SMTP corporativo para envio do código OTP
+# ---------------------------------------------------------------------------
+SMTP_HOST="smtp-mail.email.com"
+SMTP_PORT=587
+SMTP_SECURE="false"
+SMTP_USER="teste@teste.com.br"
+SMTP_PASS="SenhaSMTP"
+SMTP_FROM="GLPI Desk <teste@teste.com.br>"
