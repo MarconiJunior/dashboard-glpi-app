@@ -1,7 +1,4 @@
-// Pool de conexão MySQL via mysql2.
-// Singleton para evitar múltiplas conexões durante o HMR do Next.js.
-
-import mysql from "mysql2/promise"
+import mysql from "mysql2/promise";
 
 const globalForDb = globalThis as unknown as { _glpiPool: mysql.Pool }
 

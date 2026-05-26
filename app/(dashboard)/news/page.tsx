@@ -1,23 +1,28 @@
 "use client"
 
-import { useTickets } from "@/hooks/use-glpi"
-import { Card, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { StatusBadge, PriorityBadge } from "@/components/tickets/badges"
-import { formatRelative, getInitials, getRequesterName, isSlaOverdue } from "@/lib/glpi/utils"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { AlertTriangle, Sparkles, Clock } from "lucide-react"
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
-import { Button } from "@/components/ui/button"
-import { TicketsTable } from "@/components/tickets/tickets-table"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { cn } from "@/lib/utils"
-import { useState } from "react"
-import { TicketDetailSheet } from "@/components/tickets/ticket-detail-sheet"
-import type { GlpiTicket } from "@/lib/glpi/types"
-import { toast } from "sonner"
+import { AlertTriangle, Clock, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
-export default function NovosChamadosPage() {
+import { PriorityBadge, StatusBadge } from "@/components/tickets/badges";
+import { TicketDetailSheet } from "@/components/tickets/ticket-detail-sheet";
+import { TicketsTable } from "@/components/tickets/tickets-table";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+    Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import {
+    formatRelative, getInitials, getRequesterName, isSlaOverdue
+} from "@/src/presentation/utils/ticket";
+import { useTickets } from "@/src/presentation/viewmodels/use-tickets";
+
+import type { GlpiTicket } from "@/src/domain/entities/ticket"
+export default function NewTicketsPage() {
   const { data, isLoading } = useTickets({ scope: "new" })
   const tickets = data?.tickets ?? []
   const critical = tickets.filter((t) => t.priority >= 5)

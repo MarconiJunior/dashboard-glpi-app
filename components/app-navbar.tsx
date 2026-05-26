@@ -1,13 +1,13 @@
 "use client"
 
-import { Moon, Sun, Search } from "lucide-react"
-import { useTheme } from "next-themes"
-import useSWR from "swr"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { getInitials } from "@/lib/glpi/utils"
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import useSWR from "swr";
+
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { getInitials } from "@/src/presentation/utils/ticket";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -18,13 +18,13 @@ export function AppNavbar() {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-6 backdrop-blur-md">
-      <div className="relative max-w-md flex-1">
+      {/* <div className="relative max-w-md flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar chamados, usuários, categorias..."
           className="h-9 border-border/60 bg-muted/40 pl-9 text-sm focus-visible:bg-background"
         />
-      </div>
+      </div> */}
       <div className="ml-auto flex items-center gap-2">
         <Badge variant="outline" className="hidden gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 md:flex">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />

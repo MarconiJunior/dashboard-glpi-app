@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { categoriesRepository } from "@/lib/glpi/repository"
+import { getCategories } from "@/src/application/use-cases/categories.use-case"
 
 export async function GET() {
-  const categories = await categoriesRepository.list()
-  return NextResponse.json({ categories })
+  return NextResponse.json({ categories: await getCategories() })
 }

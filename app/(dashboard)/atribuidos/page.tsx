@@ -1,6 +1,6 @@
-import { TicketsTable } from "@/components/tickets/tickets-table"
+import { TicketsTable } from "@/components/tickets/tickets-table";
 
-export default function MeusChamadosPage() {
+export default function MyTicketsPage() {
   return (
     <div className="space-y-6">
       <div>

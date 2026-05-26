@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { pool } from "@/lib/db"
+import { pool } from "@/src/infrastructure/database/connection"
 import type { RowDataPacket } from "mysql2/promise"
 
 const TECHNICIAN_ID = parseInt(process.env.TECHNICIAN_ID ?? "0", 10)

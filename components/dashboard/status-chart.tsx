@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { STATUS_LABELS, type TicketStatus } from "@/lib/glpi/types"
+import { STATUS_LABELS, type TicketStatus } from "@/src/domain/entities/ticket"
 
 const config = {
   count: { label: "Chamados", color: "var(--chart-1)" },

@@ -1,6 +1,6 @@
 "use client"
 
-import { useDashboard } from "@/hooks/use-glpi"
+import { useDashboard } from "@/src/presentation/viewmodels/use-dashboard"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { StatusChart } from "@/components/dashboard/status-chart"
 import { CategoryChart } from "@/components/dashboard/category-chart"

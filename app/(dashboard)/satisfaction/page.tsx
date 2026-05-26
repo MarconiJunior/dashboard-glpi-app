@@ -1,15 +1,18 @@
 "use client"
 
-import { useSatisfaction } from "@/hooks/use-glpi"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MetricCard } from "@/components/dashboard/metric-card"
-import { Star, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { formatDate, getInitials, getRequesterName } from "@/lib/glpi/utils"
-import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { cn } from "@/lib/utils"
+import { MessageSquare, Star, ThumbsDown, ThumbsUp, TrendingUp } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+
+import { MetricCard } from "@/components/dashboard/metric-card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, type
+} from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { formatDate, getInitials, getRequesterName } from "@/src/presentation/utils/ticket";
+import { useSatisfaction } from "@/src/presentation/viewmodels/use-satisfaction";
 
 const trendConfig = {
   media: { label: "Média", color: "var(--chart-1)" },
@@ -35,7 +38,7 @@ function StarRating({ value }: { value: number }) {
   )
 }
 
-export default function SatisfacaoPage() {
+export default function SatisfactionPage() {
   const { data, isLoading } = useSatisfaction()
   const stats = data?.stats
   const list = data?.list ?? []

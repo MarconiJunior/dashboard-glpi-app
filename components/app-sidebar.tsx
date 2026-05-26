@@ -1,17 +1,18 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { LayoutDashboard, Inbox, Sparkles, Star, ChevronLeft, Headphones } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { ChevronLeft, Headphones, Inbox, LayoutDashboard, Sparkles, Star } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/atribuidos", label: "Meus Chamados", icon: Inbox },
-  { href: "/novos", label: "Novos Chamados", icon: Sparkles },
-  { href: "/satisfacao", label: "Satisfação", icon: Star },
+  { href: "/assigned", label: "Meus Chamados", icon: Inbox },
+  { href: "/news", label: "Novos Chamados", icon: Sparkles },
+  { href: "/satisfaction", label: "Satisfação", icon: Star },
 ]
 
 export function AppSidebar() {

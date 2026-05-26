@@ -1,31 +1,16 @@
-// Implementação concreta de ITicketsRepository usando mysql2.
-// Todas as queries são somente leitura (SELECT).
-
 import { pool } from "../database/connection";
 
 import type { RowDataPacket } from "mysql2/promise"
 import type { GlpiTicket, TicketStatus, TicketPriority } from "@/src/domain/entities/ticket"
 import type { ITicketsRepository, TicketFilters, DashboardMetrics } from "@/src/domain/repositories/ITicketsRepository"
 
-// ---------------------------------------------------------------------------
-// Configuração
-// ---------------------------------------------------------------------------
-
 const TECHNICIAN_ID = parseInt(process.env.TECHNICIAN_ID ?? "0", 10)
 const ALLOWED_ENTITIES = process.env.ALLOWED_ENTITIES
-
-// ---------------------------------------------------------------------------
-// Helper de query
-// ---------------------------------------------------------------------------
 
 async function q<T extends RowDataPacket>(sql: string, params: unknown[] = []): Promise<T[]> {
   const [rows] = await pool.query<T[]>(sql, params)
   return rows
 }
-
-// ---------------------------------------------------------------------------
-// Mapeamentos
-// ---------------------------------------------------------------------------
 
 function mapStatus(n: number): TicketStatus {
   const m: Record<number, TicketStatus> = {
@@ -113,10 +98,6 @@ function mapRow(row: RawTicketRow): GlpiTicket {
   }
 }
 
-// ---------------------------------------------------------------------------
-// SQL base — meus chamados (técnico atribuído, type=2)
-// ---------------------------------------------------------------------------
-
 const MY_TICKETS_SQL = `
   SELECT
     t.id, t.name, t.content, t.status, t.priority, t.urgency, t.impact, t.type,
@@ -169,10 +150,6 @@ async function fetchMyTicketsRaw(): Promise<GlpiTicket[]> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Filtros em memória (dataset por técnico é pequeno)
-// ---------------------------------------------------------------------------
-
 function applyFilters(items: GlpiTicket[], f: TicketFilters): GlpiTicket[] {
   let r = items
   if (f.status?.length) r = r.filter((t) => f.status!.includes(t.status))
@@ -202,10 +179,6 @@ function applyFilters(items: GlpiTicket[], f: TicketFilters): GlpiTicket[] {
   }
   return r
 }
-
-// ---------------------------------------------------------------------------
-// Implementação
-// ---------------------------------------------------------------------------
 
 class TicketsRepository implements ITicketsRepository {
   async getMyTickets(filters: TicketFilters = {}): Promise<GlpiTicket[]> {

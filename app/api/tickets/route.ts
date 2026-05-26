@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server"
-import { ticketsRepository, type TicketFilters } from "@/lib/glpi/repository"
-import type { TicketPriority, TicketStatus } from "@/lib/glpi/types"
+import { getMyTickets, getNewTickets } from "@/src/application/use-cases/tickets.use-case"
+import type { TicketFilters } from "@/src/domain/repositories/ITicketsRepository"
+import type { TicketPriority, TicketStatus } from "@/src/domain/entities/ticket"
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const scope = searchParams.get("scope") ?? "mine" // mine | new
+  const scope = searchParams.get("scope") ?? "mine"
 
   const filters: TicketFilters = {
     search: searchParams.get("search") ?? undefined,
@@ -16,7 +17,9 @@ export async function GET(req: Request) {
     slaOverdue: searchParams.get("slaOverdue") === "true",
   }
 
-  const tickets = scope === "new" ? await ticketsRepository.getNewTickets(filters) : await ticketsRepository.getMyTickets(filters)
+  const tickets = scope === "new"
+    ? await getNewTickets(filters)
+    : await getMyTickets(filters)
 
   return NextResponse.json({ tickets })
 }

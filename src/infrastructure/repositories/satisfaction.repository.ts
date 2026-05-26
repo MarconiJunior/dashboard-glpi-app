@@ -1,6 +1,5 @@
-// Implementação concreta de ISatisfactionRepository usando mysql2.
+import { pool } from "../database/connection";
 
-import { pool } from "../database/connection"
 import type { RowDataPacket } from "mysql2/promise"
 import type { GlpiSatisfaction } from "@/src/domain/entities/ticket"
 import type {

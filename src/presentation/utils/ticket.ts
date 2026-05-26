@@ -1,4 +1,4 @@
-import type { GlpiTicket, TicketPriority, TicketStatus } from "./types"
+import type { GlpiTicket, TicketPriority, TicketStatus } from "@/src/domain/entities/ticket"
 
 export function getRequesterName(t: GlpiTicket): string {
   const u = t.requester
@@ -23,8 +23,7 @@ export function isSlaOverdue(t: GlpiTicket): boolean {
 
 export function slaRemainingHours(t: GlpiTicket): number | null {
   if (!t.time_to_resolve) return null
-  const ms = new Date(t.time_to_resolve).getTime() - Date.now()
-  return ms / 3600000
+  return (new Date(t.time_to_resolve).getTime() - Date.now()) / 3_600_000
 }
 
 export function statusColor(status: TicketStatus): string {
@@ -59,7 +58,7 @@ export function formatDate(iso: string, opts: Intl.DateTimeFormatOptions = {}): 
 
 export function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
-  const min = Math.floor(diff / 60000)
+  const min = Math.floor(diff / 60_000)
   if (min < 1) return "agora"
   if (min < 60) return `${min}m atrás`
   const h = Math.floor(min / 60)
@@ -77,7 +76,7 @@ export function exportToCSV(rows: Record<string, unknown>[], filename = "export.
     return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
   }
   const csv = [headers.join(";"), ...rows.map((r) => headers.map((h) => escape(r[h])).join(";"))].join("\n")
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" })
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" })
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
   a.href = url

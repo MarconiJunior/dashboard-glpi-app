@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server"
-import { satisfactionRepository } from "@/lib/glpi/repository"
+import { getSatisfactionData } from "@/src/application/use-cases/satisfaction.use-case"
 
 export async function GET() {
-  const [list, stats, monthly, distribution] = await Promise.all([
-    satisfactionRepository.list(),
-    satisfactionRepository.getStats(),
-    satisfactionRepository.getMonthlyTrend(),
-    satisfactionRepository.getDistribution(),
-  ])
-  return NextResponse.json({ list, stats, monthly, distribution })
+  return NextResponse.json(await getSatisfactionData())
 }

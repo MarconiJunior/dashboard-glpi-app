@@ -9,12 +9,12 @@ import {
 } from "@/components/ui/sheet";
 import {
     formatDate, formatRelative, getInitials, getRequesterName, isSlaOverdue
-} from "@/lib/glpi/utils";
+} from "@/src/presentation/utils/ticket";
 import { cn } from "@/lib/utils";
 
 import { PriorityBadge, StatusBadge } from "./badges";
 
-import type { GlpiTicket } from "@/lib/glpi/types"
+import type { GlpiTicket } from "@/src/domain/entities/ticket"
 interface Props {
   ticket: GlpiTicket | null
   open: boolean
