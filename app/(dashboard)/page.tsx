@@ -1,26 +1,33 @@
 "use client";
 
-import { useDashboard } from "@/src/presentation/viewmodels/use-dashboard";
-import { MetricCard } from "@/components/dashboard/metric-card";
-import { StatusChart } from "@/components/dashboard/status-chart";
+import { Activity, AlertTriangle, CheckCircle2, Clock, Inbox, Sparkles, Star, Timer } from "lucide-react";
+import { useState } from "react";
+
+import { DateRangeFilter, type DateRange } from "@/components/filters/date-range-filter";
 import { CategoryChart } from "@/components/dashboard/category-chart";
+import { MetricCard } from "@/components/dashboard/metric-card";
 import { MonthlyChart } from "@/components/dashboard/monthly-chart";
 import { ResolutionTimeChart } from "@/components/dashboard/resolution-time-chart";
-import { Inbox, Sparkles, CheckCircle2, Clock, Timer, Star, AlertTriangle, Activity } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { StatusChart } from "@/components/dashboard/status-chart";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboard } from "@/src/presentation/viewmodels/use-dashboard";
 
 export default function DashboardPage() {
-  const { data, isLoading } = useDashboard();
+  const [dateRange, setDateRange] = useState<DateRange>({ from: "", to: "" });
+  const { data, isLoading } = useDashboard(dateRange);
   const m = data?.metrics;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-balance text-2xl font-semibold tracking-tight">Visão geral</h1>
-        <p className="text-sm text-muted-foreground">
-          Métricas em tempo real dos seus chamados no GLPI.
-        </p>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-balance text-2xl font-semibold tracking-tight">Visão geral</h1>
+          <p className="text-sm text-muted-foreground">
+            Métricas em tempo real dos seus chamados no GLPI.
+          </p>
+        </div>
+        <DateRangeFilter value={dateRange} onChange={setDateRange} />
       </div>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

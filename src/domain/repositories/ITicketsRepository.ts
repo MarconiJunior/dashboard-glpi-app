@@ -28,8 +28,8 @@ export interface ITicketsRepository {
   getMyTickets(ctx: UserContext, filters?: TicketFilters): Promise<GlpiTicket[]>
   getNewTickets(ctx: UserContext, filters?: TicketFilters): Promise<GlpiTicket[]>
   getById(id: number): Promise<GlpiTicket | null>
-  getDashboardMetrics(ctx: UserContext): Promise<DashboardMetrics>
-  getStatusDistribution(ctx: UserContext): Promise<{ status: string; count: number }[]>
-  getCategoryDistribution(ctx: UserContext): Promise<{ category: string; count: number }[]>
+  getDashboardMetrics(ctx: UserContext, filters?: Pick<TicketFilters, "dateFrom" | "dateTo">): Promise<DashboardMetrics>
+  getStatusDistribution(ctx: UserContext, filters?: Pick<TicketFilters, "dateFrom" | "dateTo">): Promise<{ status: string; count: number }[]>
+  getCategoryDistribution(ctx: UserContext, filters?: Pick<TicketFilters, "dateFrom" | "dateTo">): Promise<{ category: string; count: number }[]>
   getMonthlyEvolution(ctx: UserContext): Promise<{ month: string; abertos: number; resolvidos: number; tempoMedio: number }[]>
 }

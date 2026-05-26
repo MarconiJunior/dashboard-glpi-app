@@ -110,6 +110,17 @@ function mapRow(row: RawTicketRow): GlpiTicket {
 // Filtros em memória
 // ---------------------------------------------------------------------------
 
+function applyDateFilter(items: GlpiTicket[], f: Pick<TicketFilters, "dateFrom" | "dateTo">): GlpiTicket[] {
+  let r = items;
+  if (f.dateFrom) r = r.filter((t) => new Date(t.date_creation) >= new Date(f.dateFrom!));
+  if (f.dateTo) {
+    const end = new Date(f.dateTo!);
+    end.setHours(23, 59, 59, 999);
+    r = r.filter((t) => new Date(t.date_creation) <= end);
+  }
+  return r;
+}
+
 function applyFilters(items: GlpiTicket[], f: TicketFilters): GlpiTicket[] {
   let r = items;
   if (f.status?.length) r = r.filter((t) => f.status!.includes(t.status));
@@ -125,8 +136,7 @@ function applyFilters(items: GlpiTicket[], f: TicketFilters): GlpiTicket[] {
         (t.requester.firstname ?? "").toLowerCase().includes(term),
     );
   }
-  if (f.dateFrom) r = r.filter((t) => new Date(t.date_creation) >= new Date(f.dateFrom!));
-  if (f.dateTo) r = r.filter((t) => new Date(t.date_creation) <= new Date(f.dateTo!));
+  r = applyDateFilter(r, f);
   if (f.slaOverdue) {
     const now = Date.now();
     r = r.filter(
@@ -297,8 +307,8 @@ class TicketsRepository implements ITicketsRepository {
     }
   }
 
-  async getDashboardMetrics(ctx: UserContext): Promise<DashboardMetrics> {
-    const mine = await fetchMyTicketsRaw(ctx);
+  async getDashboardMetrics(ctx: UserContext, filters: Pick<TicketFilters, "dateFrom" | "dateTo"> = {}): Promise<DashboardMetrics> {
+    const mine = applyDateFilter(await fetchMyTicketsRaw(ctx), filters);
     const entities = ctx.allowedEntities.join(",") || "0";
     const solved = mine.filter((t) => t.status === "solved" || t.status === "closed");
     const pending = mine.filter((t) => t.status === "pending" || t.status === "planned");
@@ -364,15 +374,15 @@ class TicketsRepository implements ITicketsRepository {
     };
   }
 
-  async getStatusDistribution(ctx: UserContext): Promise<{ status: string; count: number }[]> {
-    const mine = await fetchMyTicketsRaw(ctx);
+  async getStatusDistribution(ctx: UserContext, filters: Pick<TicketFilters, "dateFrom" | "dateTo"> = {}): Promise<{ status: string; count: number }[]> {
+    const mine = applyDateFilter(await fetchMyTicketsRaw(ctx), filters);
     const counts: Record<string, number> = {};
     mine.forEach((t) => { counts[t.status] = (counts[t.status] ?? 0) + 1; });
     return Object.entries(counts).map(([status, count]) => ({ status, count }));
   }
 
-  async getCategoryDistribution(ctx: UserContext): Promise<{ category: string; count: number }[]> {
-    const mine = await fetchMyTicketsRaw(ctx);
+  async getCategoryDistribution(ctx: UserContext, filters: Pick<TicketFilters, "dateFrom" | "dateTo"> = {}): Promise<{ category: string; count: number }[]> {
+    const mine = applyDateFilter(await fetchMyTicketsRaw(ctx), filters);
     const counts: Record<string, number> = {};
     mine.forEach((t) => {
       const name = t.category?.name ?? "Sem categoria";

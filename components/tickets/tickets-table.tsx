@@ -3,6 +3,8 @@
 import {
     AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Download, Filter, Inbox, Search, X
 } from "lucide-react";
+
+import { DateRangeFilter, type DateRange } from "@/components/filters/date-range-filter";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -66,6 +68,7 @@ export function TicketsTable({ scope }: Props) {
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [slaOverdue, setSlaOverdue] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange>({ from: "", to: "" });
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "date_creation", dir: "desc" });
   const [selected, setSelected] = useState<GlpiTicket | null>(null);
@@ -79,6 +82,8 @@ export function TicketsTable({ scope }: Props) {
     priority: priorityFilter !== "all" ? [Number(priorityFilter)] : undefined,
     categoryId: categoryFilter !== "all" ? [Number(categoryFilter)] : undefined,
     slaOverdue,
+    dateFrom: dateRange.from || undefined,
+    dateTo: dateRange.to || undefined,
   });
 
   const sorted = useMemo(() => {
@@ -109,10 +114,16 @@ export function TicketsTable({ scope }: Props) {
     setPriorityFilter("all");
     setCategoryFilter("all");
     setSlaOverdue(false);
+    setDateRange({ from: "", to: "" });
   };
 
   const hasActiveFilters =
-    search.length > 0 || statusFilter !== "all" || priorityFilter !== "all" || categoryFilter !== "all" || slaOverdue;
+    search.length > 0 ||
+    statusFilter !== "all" ||
+    priorityFilter !== "all" ||
+    categoryFilter !== "all" ||
+    slaOverdue ||
+    Boolean(dateRange.from || dateRange.to);
 
   const handleExport = () => {
     const rows = sorted.map((t) => ({
@@ -131,6 +142,11 @@ export function TicketsTable({ scope }: Props) {
 
   return (
     <div className="space-y-4">
+      <DateRangeFilter
+        value={dateRange}
+        onChange={(r) => { setDateRange(r); setPage(1); }}
+      />
+
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

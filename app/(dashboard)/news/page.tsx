@@ -4,6 +4,7 @@ import { AlertTriangle, Clock, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { DateRangeFilter, type DateRange } from "@/components/filters/date-range-filter";
 import { PriorityBadge, StatusBadge } from "@/components/tickets/badges";
 import { TicketDetailSheet } from "@/components/tickets/ticket-detail-sheet";
 import { TicketsTable } from "@/components/tickets/tickets-table";
@@ -22,8 +23,14 @@ import {
 import { useTickets } from "@/src/presentation/viewmodels/use-tickets";
 
 import type { GlpiTicket } from "@/src/domain/entities/ticket";
+
 export default function NewTicketsPage() {
-  const { data, isLoading } = useTickets({ scope: "new" });
+  const [dateRange, setDateRange] = useState<DateRange>({ from: "", to: "" });
+  const { data, isLoading } = useTickets({
+    scope: "new",
+    dateFrom: dateRange.from || undefined,
+    dateTo: dateRange.to || undefined,
+  });
   const tickets = data?.tickets ?? [];
   const critical = tickets.filter((t) => t.priority >= 5);
 
@@ -44,6 +51,8 @@ export default function NewTicketsPage() {
           {tickets.length} aguardando · atualiza a cada 15s
         </div>
       </div>
+
+      <DateRangeFilter value={dateRange} onChange={setDateRange} />
 
       {critical.length > 0 && (
         <section className="space-y-3">

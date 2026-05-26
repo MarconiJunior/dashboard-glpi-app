@@ -12,6 +12,8 @@ interface MetricCardProps {
   icon: LucideIcon
   accent?: "primary" | "blue" | "amber" | "emerald" | "red" | "violet"
   loading?: boolean
+  onClick?: () => void
+  active?: boolean
 }
 
 const accentMap: Record<NonNullable<MetricCardProps["accent"]>, string> = {
@@ -23,9 +25,16 @@ const accentMap: Record<NonNullable<MetricCardProps["accent"]>, string> = {
   violet: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
 };
 
-export function MetricCard({ label, value, hint, icon: Icon, accent = "primary", loading }: MetricCardProps) {
+export function MetricCard({ label, value, hint, icon: Icon, accent = "primary", loading, onClick, active }: MetricCardProps) {
   return (
-    <Card className="relative overflow-hidden border-border/60 transition-shadow hover:shadow-md">
+    <Card
+      className={cn(
+        "relative overflow-hidden border-border/60 transition-all hover:shadow-md",
+        onClick && "cursor-pointer select-none",
+        active && "ring-2 ring-primary/60",
+      )}
+      onClick={onClick}
+    >
       <CardContent className="flex items-start justify-between gap-3 p-5">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
