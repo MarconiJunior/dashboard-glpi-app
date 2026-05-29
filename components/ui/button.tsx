@@ -51,6 +51,10 @@ function Button({
   return (
     <Comp
       data-slot="button"
+      // React 19 intencionalmente omite `disabled` no SSR para suporte a
+      // Progressive Enhancement em formulários. suppressHydrationWarning
+      // evita o warning de mismatch sem alterar comportamento.
+      suppressHydrationWarning
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

@@ -225,15 +225,15 @@ export default function SatisfactionPage() {
                     stroke="var(--color-media)"
                     strokeWidth={2.5}
                     dot={(props) => {
-                      const { cx, cy, payload } = props;
+                      const { cx, cy, payload, index } = props;
                       const active = monthFilter === payload.month;
                       return (
                         <circle
-                          key={`dot-${payload.month}`}
+                          key={`dot-${index}-${payload.month}`}
                           cx={cx}
                           cy={cy}
                           r={active ? 7 : 4}
-                          fill={active ? "var(--color-media)" : "var(--color-media)"}
+                          fill="var(--color-media)"
                           stroke={active ? "var(--background)" : "none"}
                           strokeWidth={active ? 2 : 0}
                         />

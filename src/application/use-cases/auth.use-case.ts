@@ -1,4 +1,4 @@
-// Caso de uso de autenticação — OTP por e-mail para técnicos GLPI.
+// Caso de uso de autenticação — OTP por e-mail para técnicos e supervisores GLPI.
 
 import { sendOtpEmail } from "@/src/infrastructure/auth/email";
 import { createOtp, hasActiveOtp, verifyOtp } from "@/src/infrastructure/auth/otp-store";
@@ -13,13 +13,24 @@ import type { SessionUser } from "@/src/infrastructure/auth/session";
 
 export type RequestOtpResult =
   | { ok: true }
-  | { ok: false; reason: "user_not_found" | "not_a_technician" | "otp_already_sent" | "send_error" }
+  | { ok: false; reason: "user_not_found" | "not_authorized" | "otp_already_sent" | "send_error" }
 
 export type VerifyOtpResult =
   | { ok: true; user: SessionUser }
   | { ok: false; reason: VerifyOtpResultReason }
 
 export type VerifyOtpResultReason = "invalid_code" | "expired" | "too_many_attempts" | "not_found"
+
+// ---------------------------------------------------------------------------
+// Perfis GLPI que concedem acesso de supervisor/gestor
+// ---------------------------------------------------------------------------
+
+const SUPERVISOR_PROFILE_KEYWORDS = ["super", "admin", "supervisor", "gestor", "manager", "gerente"];
+
+export function isSupervisorProfile(name: string): boolean {
+  const lower = name.toLowerCase();
+  return SUPERVISOR_PROFILE_KEYWORDS.some((kw) => lower.includes(kw));
+}
 
 // ---------------------------------------------------------------------------
 // Busca usuário pelo e-mail no banco GLPI
@@ -48,34 +59,81 @@ async function findUserByEmail(email: string): Promise<GlpiUserRow | null> {
 }
 
 // ---------------------------------------------------------------------------
-// Valida se o usuário é técnico (já foi atribuído como técnico em algum chamado)
+// Determina papel e separa entidades por perfil
 // ---------------------------------------------------------------------------
 
-async function isTechnician(userId: number): Promise<boolean> {
-  interface CountRow extends RowDataPacket { c: number }
-  const [rows] = await pool.query<CountRow[]>(
-    "SELECT COUNT(*) AS c FROM glpi_tickets_users WHERE users_id = ? AND type = 2 LIMIT 1",
-    [userId],
-  );
-  return (rows[0]?.c ?? 0) > 0;
+interface EntitySets {
+  role: "supervisor" | "technician" | null
+  /** Entidades onde o usuário tem perfil técnico (visão pessoal). */
+  technicianEntities: number[]
+  /** Entidades onde o usuário tem perfil supervisor/gestor (visão de gestão). */
+  supervisorEntities: number[]
 }
 
-// ---------------------------------------------------------------------------
-// Busca as entidades do usuário em glpi_profiles_users
-// ---------------------------------------------------------------------------
+async function getEntitySets(userId: number): Promise<EntitySets> {
+  interface ProfileEntityRow extends RowDataPacket {
+    profile_name: string
+    entities_id: number
+  }
 
-async function getUserEntities(userId: number): Promise<number[]> {
-  interface EntityRow extends RowDataPacket { entities_id: number }
-  const [rows] = await pool.query<EntityRow[]>(
+  // Busca todos os perfis do usuário com suas entidades
+  const [rows] = await pool.query<ProfileEntityRow[]>(
     `
-    SELECT DISTINCT entities_id
-    FROM glpi_profiles_users
-    WHERE users_id = ?
-      AND entities_id IS NOT NULL
+    SELECT p.name AS profile_name, pu.entities_id
+    FROM glpi_profiles p
+    INNER JOIN glpi_profiles_users pu ON pu.profiles_id = p.id
+    WHERE pu.users_id = ?
+      AND pu.entities_id IS NOT NULL
     `,
     [userId],
   );
-  return rows.map((r) => r.entities_id);
+
+  const supervisorEntities: number[] = [];
+  const technicianEntities: number[] = [];
+
+  for (const row of rows) {
+    if (isSupervisorProfile(row.profile_name)) {
+      supervisorEntities.push(row.entities_id);
+    } else {
+      technicianEntities.push(row.entities_id);
+    }
+  }
+
+  // Deduplica
+  const supUniq = [...new Set(supervisorEntities)];
+  const techUniq = [...new Set(technicianEntities)];
+
+  // Define papel: supervisor se tiver qualquer entidade de supervisor
+  if (supUniq.length > 0) {
+    return { role: "supervisor", technicianEntities: techUniq, supervisorEntities: supUniq };
+  }
+
+  // Fallback: verifica atribuições em chamados para confirmar técnico
+  if (techUniq.length > 0) {
+    return { role: "technician", technicianEntities: techUniq, supervisorEntities: [] };
+  }
+
+  // Última chance: verificar se foi atribuído como técnico em algum chamado
+  interface CountRow extends RowDataPacket { c: number }
+  const [techRows] = await pool.query<CountRow[]>(
+    "SELECT COUNT(*) AS c FROM glpi_tickets_users WHERE users_id = ? AND type = 2 LIMIT 1",
+    [userId],
+  );
+  if ((techRows[0]?.c ?? 0) > 0) {
+    // Técnico sem entidade de perfil — pega entidades dos chamados dele
+    interface TicketEntityRow extends RowDataPacket { entities_id: number }
+    const [ticketEntityRows] = await pool.query<TicketEntityRow[]>(
+      `SELECT DISTINCT t.entities_id
+       FROM glpi_tickets t
+       INNER JOIN glpi_tickets_users tu ON tu.tickets_id = t.id
+       WHERE tu.users_id = ? AND tu.type = 2 AND t.is_deleted = 0`,
+      [userId],
+    );
+    const fromTickets = ticketEntityRows.map((r) => r.entities_id);
+    return { role: "technician", technicianEntities: fromTickets, supervisorEntities: [] };
+  }
+
+  return { role: null, technicianEntities: [], supervisorEntities: [] };
 }
 
 // ---------------------------------------------------------------------------
@@ -83,7 +141,6 @@ async function getUserEntities(userId: number): Promise<number[]> {
 // ---------------------------------------------------------------------------
 
 export async function requestOtp(email: string): Promise<RequestOtpResult> {
-  // Rate-limit: não reenviar se já existe OTP ativo
   if (hasActiveOtp(email)) {
     return { ok: false, reason: "otp_already_sent" };
   }
@@ -91,8 +148,8 @@ export async function requestOtp(email: string): Promise<RequestOtpResult> {
   const user = await findUserByEmail(email);
   if (!user) return { ok: false, reason: "user_not_found" };
 
-  const technician = await isTechnician(user.id);
-  if (!technician) return { ok: false, reason: "not_a_technician" };
+  const { role } = await getEntitySets(user.id);
+  if (!role) return { ok: false, reason: "not_authorized" };
 
   const code = createOtp(email);
 
@@ -118,8 +175,17 @@ export async function verifyOtpAndGetUser(email: string, code: string): Promise<
   const user = await findUserByEmail(email);
   if (!user) return { ok: false, reason: "not_found" };
 
+  const { role, technicianEntities, supervisorEntities } = await getEntitySets(user.id);
+  if (!role) return { ok: false, reason: "not_found" };
+
   const fullName = `${user.firstname ?? ""} ${user.realname ?? ""}`.trim() || user.name;
-  const entities = await getUserEntities(user.id);
+
+  // Entidades para visão pessoal (técnico):
+  //   - técnico puro: suas entidades de perfil
+  //   - supervisor que também é técnico: suas entidades técnicas
+  //   - supervisor sem entidades técnicas: fallback para supervisorEntities
+  const personalEntities =
+    technicianEntities.length > 0 ? technicianEntities : supervisorEntities;
 
   return {
     ok: true,
@@ -127,7 +193,9 @@ export async function verifyOtpAndGetUser(email: string, code: string): Promise<
       id: user.id,
       fullName,
       email: email.toLowerCase(),
-      entities,
+      entities: personalEntities,
+      managedEntities: supervisorEntities,
+      role,
     },
   };
 }

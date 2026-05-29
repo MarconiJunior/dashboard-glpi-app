@@ -165,7 +165,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Acesso restrito a técnicos cadastrados no GLPI.
+          Acesso restrito a técnicos e gestores cadastrados no GLPI.
         </p>
       </div>
     </div>

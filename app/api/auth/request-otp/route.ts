@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (!result.ok) {
     const messages: Record<string, string> = {
       user_not_found: "Nenhum usuário encontrado com este e-mail no GLPI.",
-      not_a_technician: "Este usuário não possui perfil de técnico.",
+      not_authorized: "Este usuário não possui perfil de técnico ou gestor.",
       otp_already_sent: "Já enviamos um código. Aguarde alguns minutos antes de tentar novamente.",
       send_error: "Falha ao enviar o e-mail. Tente novamente em instantes.",
     };

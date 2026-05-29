@@ -5,7 +5,11 @@ export interface SessionUser {
   id: number
   fullName: string
   email: string
+  /** Entidades onde o usuário atua como técnico (visão pessoal). */
   entities: number[]
+  /** Entidades onde o usuário tem perfil de supervisor/gestor (visão de gestão). */
+  managedEntities: number[]
+  role: "technician" | "supervisor"
 }
 
 export interface AppSession {
