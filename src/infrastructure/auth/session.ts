@@ -16,13 +16,20 @@ export interface AppSession {
   user?: SessionUser
 }
 
+// COOKIE_SECURE=false no .env permite login via HTTP (ex: rede interna sem HTTPS).
+// Se omitido, usa true em produção (comportamento seguro padrão).
+const cookieSecure =
+  process.env.COOKIE_SECURE === "false"
+    ? false
+    : process.env.NODE_ENV === "production";
+
 export const SESSION_OPTIONS: SessionOptions = {
   password:
     process.env.SESSION_SECRET ??
     "fallback-secret-change-me-in-production!!",
   cookieName: "glpi-desk-session",
   cookieOptions: {
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure,
     httpOnly: true,
     sameSite: "lax",
     maxAge: 60 * 60 * 8,

@@ -1,14 +1,17 @@
 # ============================================================
-# Stage 1 — deps: instala dependências de produção + dev
+# Stage 1 — deps: instala dependências
 # ============================================================
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Instala pnpm globalmente
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Rede corporativa com inspeção SSL: desabilita verificação para npm e pnpm
+RUN npm config set strict-ssl false
 
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+RUN npm install -g pnpm@10.29.3 --no-fund --no-audit
+
+COPY package.json pnpm-lock.yaml ./
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ============================================================
 # Stage 2 — builder: compila o Next.js
@@ -16,14 +19,15 @@ RUN pnpm install --frozen-lockfile
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm config set strict-ssl false \
+ && npm install -g pnpm@10.29.3 --no-fund --no-audit 
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Variáveis de build necessárias (sem segredos em runtime)
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm build
 
@@ -34,17 +38,14 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-# Desativa telemetria do Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Usuário não-root para segurança
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 nextjs
 
-# Arquivos estáticos e standalone output
-COPY --from=builder /app/public            ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static    ./.next/static
+COPY --from=builder /app/public                                  ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone  ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static      ./.next/static
 
 USER nextjs
 
@@ -52,5 +53,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Usa o server standalone gerado pelo Next.js
 CMD ["node", "server.js"]
