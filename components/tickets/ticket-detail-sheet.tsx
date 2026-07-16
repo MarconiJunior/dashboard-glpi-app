@@ -37,7 +37,7 @@ export function TicketDetailSheet({ ticket, open, onOpenChange }: Props) {
                 <StatusBadge status={ticket.status} />
                 <PriorityBadge priority={ticket.priority} />
                 {isSlaOverdue(ticket) && (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-600 dark:text-red-400">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-signal-crit/30 bg-signal-crit/10 px-2 py-0.5 text-xs font-medium text-signal-crit">
                     <AlertTriangle className="h-3 w-3" /> SLA vencido
                   </span>
                 )}
@@ -73,7 +73,7 @@ export function TicketDetailSheet({ ticket, open, onOpenChange }: Props) {
                   icon={Clock}
                   label="SLA até"
                   value={ticket.time_to_resolve ? formatDate(ticket.time_to_resolve, { hour: "2-digit", minute: "2-digit" }) : "—"}
-                  className={cn(isSlaOverdue(ticket) && "text-red-600 dark:text-red-400")}
+                  className={cn(isSlaOverdue(ticket) && "text-signal-crit")}
                 />
               </Section>
 

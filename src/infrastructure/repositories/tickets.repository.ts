@@ -4,7 +4,7 @@
 import { pool } from "../database/connection";
 import type { RowDataPacket } from "mysql2/promise";
 import type { GlpiTicket, TicketStatus, TicketPriority } from "@/src/domain/entities/ticket";
-import type { ITicketsRepository, TicketFilters, DashboardMetrics } from "@/src/domain/repositories/ITicketsRepository";
+import type { ITicketsRepository, TicketFilters, DashboardMetrics, DashboardData } from "@/src/domain/repositories/ITicketsRepository";
 import type { UserContext } from "@/src/domain/repositories/UserContext";
 
 // ---------------------------------------------------------------------------
@@ -307,8 +307,27 @@ class TicketsRepository implements ITicketsRepository {
     }
   }
 
-  async getDashboardMetrics(ctx: UserContext, filters: Pick<TicketFilters, "dateFrom" | "dateTo"> = {}): Promise<DashboardMetrics> {
-    const mine = applyDateFilter(await fetchMyTicketsRaw(ctx), filters);
+  /**
+   * Busca os chamados do técnico UMA ÚNICA VEZ (query pesada, sem limite de data)
+   * e deriva métricas, distribuições e evolução mensal do mesmo dataset em memória.
+   * Antes, cada uma dessas 4 peças refazia a mesma query no banco — 4x a cada poll do SWR.
+   */
+  async getDashboardData(
+    ctx: UserContext,
+    filters: Pick<TicketFilters, "dateFrom" | "dateTo"> = {},
+  ): Promise<DashboardData> {
+    const raw = await fetchMyTicketsRaw(ctx);
+    const mine = applyDateFilter(raw, filters);
+
+    const metrics = await this.computeMetrics(ctx, mine);
+    const statusDist = this.computeStatusDistribution(mine);
+    const categoryDist = this.computeCategoryDistribution(mine);
+    const monthly = this.computeMonthlyEvolution(raw);
+
+    return { metrics, statusDist, categoryDist, monthly };
+  }
+
+  private async computeMetrics(ctx: UserContext, mine: GlpiTicket[]): Promise<DashboardMetrics> {
     const entities = ctx.allowedEntities.join(",") || "0";
     const solved = mine.filter((t) => t.status === "solved" || t.status === "closed");
     const pending = mine.filter((t) => t.status === "pending" || t.status === "planned");
@@ -374,15 +393,13 @@ class TicketsRepository implements ITicketsRepository {
     };
   }
 
-  async getStatusDistribution(ctx: UserContext, filters: Pick<TicketFilters, "dateFrom" | "dateTo"> = {}): Promise<{ status: string; count: number }[]> {
-    const mine = applyDateFilter(await fetchMyTicketsRaw(ctx), filters);
+  private computeStatusDistribution(mine: GlpiTicket[]): { status: string; count: number }[] {
     const counts: Record<string, number> = {};
     mine.forEach((t) => { counts[t.status] = (counts[t.status] ?? 0) + 1; });
     return Object.entries(counts).map(([status, count]) => ({ status, count }));
   }
 
-  async getCategoryDistribution(ctx: UserContext, filters: Pick<TicketFilters, "dateFrom" | "dateTo"> = {}): Promise<{ category: string; count: number }[]> {
-    const mine = applyDateFilter(await fetchMyTicketsRaw(ctx), filters);
+  private computeCategoryDistribution(mine: GlpiTicket[]): { category: string; count: number }[] {
     const counts: Record<string, number> = {};
     mine.forEach((t) => {
       const name = t.category?.name ?? "Sem categoria";
@@ -393,8 +410,7 @@ class TicketsRepository implements ITicketsRepository {
       .sort((a, b) => b.count - a.count);
   }
 
-  async getMonthlyEvolution(ctx: UserContext): Promise<{ month: string; abertos: number; resolvidos: number; tempoMedio: number }[]> {
-    const mine = await fetchMyTicketsRaw(ctx);
+  private computeMonthlyEvolution(mine: GlpiTicket[]): { month: string; abertos: number; resolvidos: number; tempoMedio: number }[] {
     const buckets = new Map<string, { opened: number; solved: number; sumHours: number }>();
     const months: string[] = [];
 

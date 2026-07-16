@@ -68,11 +68,15 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md">
             <Headphones className="h-6 w-6" />
+            <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center">
+              <span className="absolute h-full w-full animate-ping rounded-full bg-signal-ok opacity-60" />
+              <span className="h-1.5 w-1.5 rounded-full bg-signal-ok ring-2 ring-background" />
+            </span>
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-semibold tracking-tight">GLPI Desk</h1>
+            <h1 className="font-display text-xl font-semibold tracking-tight">GLPI Desk</h1>
             <p className="text-sm text-muted-foreground">Painel do Técnico</p>
           </div>
         </div>
@@ -106,7 +110,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+              {error && <p className="text-sm text-signal-crit">{error}</p>}
 
               <Button type="submit" className="w-full" disabled={loading || !email}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -136,7 +140,7 @@ export default function LoginPage() {
                     maxLength={6}
                     autoComplete="one-time-code"
                     placeholder="000000"
-                    className={cn("pl-9 font-mono tracking-widest text-center text-lg", error && "border-red-500")}
+                    className={cn("pl-9 font-mono tracking-widest text-center text-lg", error && "border-signal-crit")}
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     required
@@ -146,7 +150,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+              {error && <p className="text-sm text-signal-crit">{error}</p>}
 
               <Button type="submit" className="w-full" disabled={loading || code.length < 6}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

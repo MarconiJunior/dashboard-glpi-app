@@ -3,6 +3,7 @@
 import { Moon, Sun, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,21 @@ import { getInitials } from "@/src/presentation/utils/ticket";
 import type { SessionUser } from "@/src/infrastructure/auth/session";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+function LiveClock() {
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <span className="hidden font-mono text-xs tabular-nums text-muted-foreground md:inline">
+      {now ? now.toLocaleTimeString("pt-BR") : "--:--:--"}
+    </span>
+  );
+}
 
 export function AppNavbar() {
   const { theme, setTheme } = useTheme();
@@ -26,10 +42,11 @@ export function AppNavbar() {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-6 backdrop-blur-md">
-      <div className="ml-auto flex items-center gap-2">
-        <Badge variant="outline" className="hidden gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 md:flex">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          Tempo real
+      <div className="ml-auto flex items-center gap-3">
+        <LiveClock />
+        <Badge variant="outline" className="hidden gap-1.5 border-signal-ok/30 bg-signal-ok/10 text-signal-ok md:flex">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-signal-ok" />
+          Ao vivo
         </Badge>
         <Button
           variant="ghost"

@@ -43,7 +43,7 @@ function StarRating({ value }: { value: number }) {
           key={n}
           className={cn(
             "h-3.5 w-3.5",
-            n <= value ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40",
+            n <= value ? "fill-signal-warn text-signal-warn" : "text-muted-foreground/40",
           )}
         />
       ))}
@@ -146,7 +146,7 @@ export default function SatisfactionPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Satisfação dos usuários</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Satisfação dos usuários</h1>
           <p className="text-sm text-muted-foreground">
             Avaliações dos chamados onde você foi o técnico responsável.
           </p>
@@ -301,7 +301,7 @@ export default function SatisfactionPage() {
               {sentimentFilter === "positive" && (
                 <Badge
                   variant="secondary"
-                  className="flex cursor-pointer items-center gap-1 border-emerald-500/40 bg-emerald-500/10 pr-1 text-emerald-700 dark:text-emerald-400"
+                  className="flex cursor-pointer items-center gap-1 border-signal-ok/40 bg-signal-ok/10 pr-1 text-signal-ok"
                   onClick={() => setSentimentFilter(null)}
                 >
                   ≥ 4 ★ Positivas
@@ -311,7 +311,7 @@ export default function SatisfactionPage() {
               {sentimentFilter === "negative" && (
                 <Badge
                   variant="secondary"
-                  className="flex cursor-pointer items-center gap-1 border-red-500/40 bg-red-500/10 pr-1 text-red-700 dark:text-red-400"
+                  className="flex cursor-pointer items-center gap-1 border-signal-crit/40 bg-signal-crit/10 pr-1 text-signal-crit"
                   onClick={() => setSentimentFilter(null)}
                 >
                   ≤ 2 ★ Negativas

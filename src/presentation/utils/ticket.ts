@@ -36,26 +36,25 @@ export function slaRemainingHours(t: GlpiTicket): number | null {
 export function statusColor(status: TicketStatus): string {
   switch (status) {
     case "new":
-      return "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30";
+      return "bg-signal-info/12 text-signal-info border-signal-info/30";
     case "assigned":
-      return "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/30";
+      return "bg-signal-progress/12 text-signal-progress border-signal-progress/30";
     case "planned":
-      return "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30";
+      return "bg-signal-planned/12 text-signal-planned border-signal-planned/30";
     case "pending":
-      return "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30";
+      return "bg-signal-warn/12 text-signal-warn border-signal-warn/30";
     case "solved":
-      return "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+      return "bg-signal-ok/12 text-signal-ok border-signal-ok/30";
     case "closed":
       return "bg-muted text-muted-foreground border-border";
   }
 }
 
 export function priorityColor(p: TicketPriority): string {
-  if (p >= 6) return "bg-red-600/20 text-red-600 dark:text-red-400 border-red-600/40";
-  if (p >= 5) return "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30";
-  if (p >= 4) return "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30";
-  if (p >= 3) return "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30";
-  if (p >= 2) return "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30";
+  if (p >= 5) return "bg-signal-crit/15 text-signal-crit border-signal-crit/35";
+  if (p >= 4) return "bg-signal-warn/15 text-signal-warn border-signal-warn/35";
+  if (p >= 3) return "bg-signal-warn/10 text-signal-warn border-signal-warn/25";
+  if (p >= 2) return "bg-signal-info/10 text-signal-info border-signal-info/25";
   return "bg-muted text-muted-foreground border-border";
 }
 

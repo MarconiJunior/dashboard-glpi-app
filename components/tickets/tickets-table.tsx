@@ -322,7 +322,7 @@ export function TicketsTable({ scope }: Props) {
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       {t.time_to_resolve ? (
-                        <span className={cn("inline-flex items-center gap-1 text-xs", overdue && "text-red-600 dark:text-red-400")}>
+                        <span className={cn("inline-flex items-center gap-1 text-xs", overdue && "text-signal-crit")}>
                           {overdue && <AlertTriangle className="h-3 w-3" />}
                           {formatDate(t.time_to_resolve)}
                         </span>

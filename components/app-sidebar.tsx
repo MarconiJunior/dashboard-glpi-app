@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  ChevronLeft, Headphones, Inbox, LayoutDashboard, Sparkles, Star, Users
+  ChevronLeft, Headphones, Inbox, LayoutDashboard, Sparkles, Star
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,10 +21,6 @@ const personalNav = [
   { href: "/assigned", label: "Meus Chamados", icon: Inbox },
   { href: "/news", label: "Novos Chamados", icon: Sparkles },
   { href: "/satisfaction", label: "Satisfação", icon: Star },
-];
-
-const supervisorNav = [
-  { href: "/management", label: "Gestão Geral", icon: Users },
 ];
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -47,10 +43,10 @@ export function AppSidebar() {
         key={item.href}
         href={item.href}
         className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          "flex items-center gap-3 rounded-md border-l-2 px-3 py-2 text-sm font-medium transition-colors",
           active
-            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+            ? "border-l-primary bg-sidebar-accent text-sidebar-accent-foreground"
+            : "border-l-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
           collapsed && "justify-center px-0",
         )}
         title={collapsed ? item.label : undefined}
@@ -71,12 +67,16 @@ export function AppSidebar() {
       <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Headphones className="h-4 w-4" />
+            <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 items-center justify-center">
+              <span className="absolute h-full w-full animate-ping rounded-full bg-signal-ok opacity-60" />
+              <span className="h-1.5 w-1.5 rounded-full bg-signal-ok ring-2 ring-sidebar" />
+            </span>
           </div>
           {!collapsed && (
             <div className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold">GLPI Desk</span>
+              <span className="font-display text-sm font-semibold tracking-tight">GLPI Desk</span>
               <span className="text-[10px] text-muted-foreground">
                 {isSupervisor ? "Painel do Gestor" : "Painel do Técnico"}
               </span>
@@ -93,19 +93,6 @@ export function AppSidebar() {
             </p>
           )}
           {personalNav.map(renderNavItem)}
-
-          {/* Gestão Geral — apenas supervisores */}
-          {isSupervisor && (
-            <>
-              <div className={cn("my-2 border-t border-sidebar-border", collapsed && "mx-2")} />
-              {!collapsed && (
-                <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                  Gestão
-                </p>
-              )}
-              {supervisorNav.map(renderNavItem)}
-            </>
-          )}
         </nav>
 
         {/* Recolher */}

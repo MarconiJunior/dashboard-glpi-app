@@ -22,7 +22,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-balance text-2xl font-semibold tracking-tight">Visão geral</h1>
+          <h1 className="text-balance font-display text-2xl font-semibold tracking-tight">Visão geral</h1>
           <p className="text-sm text-muted-foreground">
             Métricas em tempo real dos seus chamados no GLPI.
           </p>
